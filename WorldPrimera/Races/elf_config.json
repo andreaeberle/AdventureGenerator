@@ -1,0 +1,35 @@
+{
+    "elf": {
+        "appearance": {
+            "height_min": 4.5,
+            "height_max": 6.25,
+            "weight_ratio_min": 20,
+            "weight_ratio_max": 23,
+            "size": "medium",
+            "skin_colors": [
+                "pale",
+                "tan",
+                "brown",
+                "black",
+                "copper",
+                "bronze",
+                "bluish white"
+            ],
+            "hair_colors": [
+                "black",
+                "light blond",
+                "silver"
+            ],
+            "eye_colors": [
+                "blue",
+                "green",
+                "gold",
+                "silver"
+            ]
+        },
+        "ability_modifiers": {
+            "dexterity": 1,
+            "intelligence": 2
+        }
+    }
+}

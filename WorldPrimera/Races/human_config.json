@@ -1,0 +1,41 @@
+{
+    "human": {
+        "appearance": {
+            "height_min": 4.7,
+            "height_max": 6.7,
+            "weight_ratio_min": 22,
+            "weight_ratio_max": 39,
+            "size": "medium",
+            "skin_colors": [
+                "pale",
+                "tan",
+                "brown",
+                "black"
+            ],
+            "hair_colors": [
+                "black",
+                "brown",
+                "red",
+                "blond brown",
+                "gold blond",
+                "platinum blond",
+                "red"
+            ],
+            "eye_colors": [
+                "blue",
+                "green",
+                "hazel",
+                "brown"
+            ]
+        },
+        "ability_modifiers": {
+            "strength": 1,
+            "perception": 1,
+            "constitution": 1,
+            "charisma": 1,
+            "intelligence": 1,
+            "dexterity": 1,
+            "luck": 1
+        }
+    }
+}
