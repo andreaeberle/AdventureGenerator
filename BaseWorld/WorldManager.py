@@ -97,5 +97,11 @@ class WorldManager:
             actual_plate_sizes.append(actual_plate_size)
             claimed_plate_mass += actual_plate_size
         
+        # Establish global geographic features
+        
+        self.oWorld.establishCoast()
+        
+        self.oWorld.identifyPlateBoundaries()
+                
     def showMap(self, view):
         self.oWorld.showMap(view)

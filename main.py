@@ -16,7 +16,8 @@ while choice != "quit":
     print("1) Land Masses")
     print("2) Continents")
     print("3) Plate Tectonics")
-    print("4) Quit")
+    print("4) Geographic Features")
+    print("5) Quit")
     
     choice = input("What would you like to view? Enter number: ")
     if choice == "1":
@@ -26,6 +27,8 @@ while choice != "quit":
     elif choice == "3":
         oGameMaster.showMap("plates")
     elif choice == "4":
+        oGameMaster.showMap("geography")
+    elif choice == "5":
         choice = "quit"
     else:
         print("Not a valid input. Please enter one of the numbers provided below:")

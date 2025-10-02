@@ -14,7 +14,7 @@ class World:
 
         self.plates = []
         
-        self.oHexManager.createWorldHexGrid(30, 60)
+        self.world_hexes = self.oHexManager.createWorldHexGrid(30, 60)
     
     def createContinent(self, size):
         continent_index = len(self.continents)
@@ -33,6 +33,37 @@ class World:
         actual_plate_size = oTectonicPlate.getSize()
         
         return actual_plate_size
-
+    
+    def establishCoast(self):
+        # Makes sure all the land tiles are correctly labeled as coast
+        for world_hex in self.world_hexes: 
+            self.oHexManager.checkIfLake(world_hex)
+            self.oHexManager.checkIfCoast(world_hex)
+            self.oHexManager.checkIfShallows(world_hex)
+        
+    def identifyPlateBoundaries(self):
+        # Plates transfer movement to hexes
+        for plate in self.plates:
+            plate.transferMovement()
+            plate.transferType()
+        # Identifies the plate boundaries present for each hex
+        for world_hex in self.world_hexes:
+            if self.oHexManager.checkIfPlateBoundary(world_hex):
+                self.oHexManager.setPlateBoundaryType(world_hex)
+                is_divergent = False
+                for plate_boundary in world_hex.getPlateBoundaries():
+                    if "convergent" in plate_boundary:
+                        if world_hex.getIsLand():
+                            world_hex.makeMountainous()
+                        else:
+                            world_hex.setIsShallows()
+                    elif "divergent" in plate_boundary:
+                        is_divergent = True
+                if is_divergent and len(world_hex.getPlateBoundaries()) == 1:
+                    if world_hex.getIsLand():
+                        world_hex.makeRiftValley()
+                    else:
+                        world_hex.makeSeaTrench()
+                    
     def showMap(self, view):
         self.oHexManager.drawWorldHexGrid(view)

@@ -16,3 +16,17 @@ class TectonicPlate:
     def getSize(self):
         return len(self.hex_list)
     
+    def setType(self):
+        if self.plate_type == "minor":
+            if len(self.hex_list) < 20:
+                self.plate_type = "micro"
+        return self.plate_type
+    
+    def transferMovement(self):
+        for world_hex in self.hex_list:
+            world_hex.setPlateMovement(self.plate_direction)
+    
+    def transferType(self):
+        self.setType()
+        for world_hex in self.hex_list:
+            world_hex.setPlateType(self.plate_type)

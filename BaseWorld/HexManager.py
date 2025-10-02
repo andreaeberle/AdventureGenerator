@@ -18,13 +18,16 @@ class HexManager:
 
     def __init__(self):
         self.world_hexes = {} # A dict of World Hex objects. Key is (x,y) tuple, value is Hex object
+        
         self.directions = ["NE", "E", "SE", "SW", "W", "NW"]
+        self.east_directions = ["NE", "E", "SE"]
+        self.west_directions = ["SW", "W", "NW"]
         
         self.continent_colors = ["red", "cyan", "yellow", "lightgreen", "purple", "pink", 
                                  "forestgreen"]
         self.plate_colors = ["white", "firebrick", "maroon", "darkorange", "peru", "saddlebrown",
                              "goldenrod", "lightcoral", "orangered", "rosybrown", "indianred", 
-                             "brown", "burlywood"]
+                             "brown", "burlywood", "rosybrown"]
         
         self.longest_border = ()
         self.biggest_continents = []
@@ -47,10 +50,13 @@ class HexManager:
     def createWorldHexGrid(self, num_rows, num_columns):
         self.num_rows = num_rows
         self.num_columns = num_columns
+        world_hex_objects = []
         for x in range(num_columns):
             for y in range(num_rows):
                 new_hex = WorldHex([x,y])
+                world_hex_objects.append(new_hex)
                 self.world_hexes[(x,y)] = new_hex
+        return world_hex_objects
                 
     def drawWorldHexGrid(self, view):
         
@@ -84,10 +90,34 @@ class HexManager:
                 else:
                     color = "black"
             
-            if view == "biomes":
-                title = "World Map: Biomes"
+            if view == "geography":
+                title = "World Map: Geographic Features"
+                if hex_tile.getIsLand():
+                    color = "darkgoldenrod" # Start with all land being brown
+                    # The ordering below will allow map to overwrite for the display of the feature
+                    # we would most like to have displayed on the map. If a tile is both a valley
+                    # and a river, the river will be highlighted. If a tile is both a river and
+                    # mountainous, the mountains will be highlighted.
+                    if hex_tile.getIsCoast():
+                        color = "navajowhite"
+                    if hex_tile.getIsValley():
+                        color = "goldenrod"
+                    if hex_tile.getIsRiftValley():
+                        color = "black"
+                    if hex_tile.getIsRiver():
+                        color = "aqua"
+                    if hex_tile.getIsMountainous():
+                        color = "saddlebrown"                        
+                        
+                else:
+                    color = "royalblue" # Start with all water tiles being blue
+                    if hex_tile.getIsShallows():
+                        color = "lightsteelblue"
+                    if hex_tile.getIsLake():
+                        color = "cornflowerblue"
+                    if hex_tile.getIsSeaTrench():
+                        color = "midnightblue"
 
-            
             self.drawHex(ax, x, y, color)
         
         plt.title(title)
@@ -254,14 +284,14 @@ class HexManager:
                 
             else:
                 counted_list = Counter(continent_indexes)
-                self.biggest_continents = counted_list.most_common(2)[0][0]
+                self.biggest_continents = counted_list.most_common(2)
                 
                 for key in self.world_hexes_keys:
                     x,y = key
                     hex_tile = self.world_hexes[key]
                     
                     # Assign all tiles from the biggest continent to the plate.
-                    if hex_tile.getContinentIndex() == self.biggest_continents[0]:
+                    if hex_tile.getContinentIndex() == self.biggest_continents[0][0]:
                         if hex_tile.getPlateIndex() != "":
                             continue # Skips tiles in the continent that are already in a plate.
                         hex_tile.addToPlate(index)
@@ -375,7 +405,7 @@ class HexManager:
             for neighbor in new_hex_neighbors:
                 if not neighbor:
                     break
-                elif neighbor.getPlateIndex() is not None:
+                elif neighbor.getPlateIndex() != "":
                     chance_of_growth += 5
             plate_roll = np.random.randint(0, 101)
             if plate_roll <= chance_of_growth:
@@ -474,12 +504,38 @@ class HexManager:
         neighbhors = self.getNeighbors(world_hex) # Returns list of all neighboring World Hex objects
         for neighbor in neighbhors:
             if not neighbor:
-                break
+                continue
             if not neighbor.getIsLand():
-                world_hex.setIsCoast(True) # Sets World Hex obj as coast if touching an ocean tile
-                return True
+                if neighbor.getIsLake():
+                    continue
+                else:
+                    # Sets World Hex obj as coast if touching an ocean tile
+                    world_hex.setIsCoast(True)
+                    return True
         world_hex.setIsCoast(False) # If World Hex is not touching any ocean tiles, it's not coast
         return False
+    
+    def checkIfShallows(self, world_hex):
+        if world_hex.getIsLand(): # A land tile cannot be shallows
+            return False
+        neighbhors = self.getNeighbors(world_hex)
+        for neighbor in neighbhors:
+            if not neighbor:
+                continue
+            elif neighbor.getIsLand(): # If any neighbor is a land hex, it's a shallows hex
+                world_hex.setIsShallows()
+    
+    def checkIfLake(self, world_hex):
+        if not world_hex.getIsLand():
+            neighbors = self.getNeighbors(world_hex)
+            for neighbor in neighbors:
+                if not neighbor:
+                    continue
+                if not neighbor.getIsLand():
+                    # Will end the method if the hex is not completely surrounded by land
+                    return False 
+            world_hex.setIsLake() # Makes it a lake hex if the ocean hex is completely 
+                                    # surrounded by land.
     
     def checkIfPlateBoundary(self, world_hex): 
         # Checks if WorldHex object is touching a hex from a different tectonic plate
@@ -490,28 +546,153 @@ class HexManager:
             if neighbor.getPlateIndex() != world_hex.getPlateIndex():
                 return True
         return False        
+    
+    def setPlateBoundaryType(self, world_hex):
+        plate_hierarchy = ["micro", "minor", "major"]
+        world_hex_direction = world_hex.getPlateMovement()
+        
+        for direction in self.directions:
+            boundary_type = ""
+            neighbor = self.getNeighbor(world_hex, direction)
+            if not neighbor:
+                continue # Prevents going off the top or bottom of map
+            if world_hex.getPlateIndex() == neighbor.getPlateIndex():
+                continue # Prevents comparing to neighbors on the same plate as the hex
+            neighbor_direction = neighbor.getPlateMovement()
+            
+            # Establish which three directions would be moving away from the world hex
+            direction_index = self.directions.index(direction)
+            
+            away_from_world_hex = []
+            away_from_world_hex.append(direction)
+            
+            if direction_index + 1 > 5:
+                new_index = direction_index - 5
+                away_from_world_hex.append(self.directions[new_index])
+            else:
+                away_from_world_hex.append(self.directions[direction_index+1])
+                
+            if direction_index - 1 < 0:
+                new_index = direction_index + 5
+                away_from_world_hex.append(self.directions[new_index])
+            else:
+                away_from_world_hex.append(self.directions[direction_index-1])
+            
+            
+            # If the hex's neighbor is moving away from the hex...
+            if neighbor_direction in away_from_world_hex:
 
-"""
-center_x, center_y = 0, 0
-radius = 1
-num_sides = 6
-
-angles = np.linspace(0, 2 * np.pi, num_sides, endpoint=False)
-vertices_x = center_x + radius * np.cos(angles)
-vertices_y = center_y + radius * np.sin(angles)
-vertices = np.column_stack([vertices_x, vertices_y])
-
-hexagon = Polygon(vertices, closed=True, edgecolor='black', facecolor='lightblue')
-
-fig, ax = plt.subplots()
-ax.add_patch(hexagon)
-
-# Set limits and aspect ratio for proper display
-ax.set_xlim(center_x - radius * 1.5, center_x + radius * 1.5)
-ax.set_ylim(center_y - radius * 1.5, center_y + radius * 1.5)
-ax.set_aspect('equal', adjustable='box')
-
-plt.title("Regular Hexagon")
-plt.grid(True)
-plt.show()
-"""
+                # ...and the hex is moving directly towards the neighbor...
+                if world_hex_direction == direction:
+                    # then you need to check the plate size (i.e., speed).
+                    world_hex_type = world_hex.getPlateType()
+                    neighbor_type = neighbor.getPlateType()
+                    # If the neighbor is moving faster than the hex...
+                    if plate_hierarchy.index(world_hex_type) > plate_hierarchy.index(neighbor_type):
+                        #... then it's divergent.
+                        boundary_type = ("divergent", direction)
+                    # If both hexes are moving at the same speed...
+                    elif plate_hierarchy.index(world_hex_type) == plate_hierarchy.index(neighbor_type):
+                        #...it's transform.
+                        boundary_type = ("transform", direction)
+                    else:
+                        #... otherwise, it's convergent.
+                        boundary_type = ("convergent", direction)
+                else: 
+                    boundary_type = ("divergent", direction)
+                        
+            # Otherwise, if the hex's neighbor is moving towards it...
+            else:
+                # Determine relationships between where the hex's neighbor is 
+                # and where the hex is moving.
+                
+                # The direction the neighbor is located in
+                if direction in self.east_directions:
+                    direction_index = self.east_directions.index(direction)
+                else: 
+                    direction_index = self.west_directions.index(direction)
+                    
+                # The direction the world hex is moving
+                if world_hex_direction in self.east_directions:
+                    world_hex_direction_index = self.east_directions.index(world_hex_direction)
+                else: world_hex_direction_index = self.west_directions.index(world_hex_direction)
+                
+                # The direction the neighbor is moving
+                if neighbor_direction in self.east_directions:
+                    neighbor_direction_index = self.east_directions.index(neighbor_direction)
+                else:
+                    neighbor_direction_index = self.west_directions.index(neighbor_direction)
+                    
+                # If the hex is moving directly towards it's neighbor...
+                if direction_index == world_hex_direction_index:
+                    # ...it's convergent.
+                    boundary_type = ("convergent", direction)
+                    
+                # If the hex is moving in the opposite direction that the neighbor is moving in...
+                elif world_hex_direction_index == neighbor_direction_index:
+                    # ...it's transform.
+                    boundary_type = ("transform", direction)
+                
+                    # If the hex is moving away from its neighbor...
+                elif world_hex_direction not in away_from_world_hex:
+                    #...then you need to check the plate size (i.e., speed).
+                    world_hex_type = world_hex.getPlateType()
+                    neighbor_type = neighbor.getPlateType()
+                    # If the hex is moving faster than its neighbor...
+                    if plate_hierarchy.index(world_hex_type) < plate_hierarchy.index(neighbor_type):
+                        #... then it's divergent.
+                        boundary_type = ("divergent", direction)
+                    # If hexes are moving at the same speed...
+                    elif plate_hierarchy.index(world_hex_type) == plate_hierarchy.index(neighbor_type):
+                        # ...it's transform.
+                        boundary_type = ("transform", direction)
+                    else:
+                        #... otherwise, it's convergent.
+                        boundary_type = ("convergent", direction)
+                
+                # Otherwise, it's converget.
+                else:
+                    boundary_type = ("convergent", direction)
+                
+            world_hex.setPlateBoundary(boundary_type)
+                        
+                        
+            """
+                # Delete after plate boundary relationship code has been settled.
+                if hex_tile.getPlateBoundaries():
+                    if len(hex_tile.getPlateBoundaries()) > 1:
+                        if "convergent" in hex_tile.getPlateBoundaries():
+                            if "transform" in hex_tile.getPlateBoundaries():
+                                if "divergent" in hex_tile.getPlateBoundaries():
+                                    color = "black"
+                                else:
+                                    color = "orange"
+                            elif "divergent" in hex_tile.getPlateBoundaries():
+                                color = "purple"
+                        else:
+                            color = "green"
+                            
+                    else:
+                        if "convergent" in hex_tile.getPlateBoundaries():
+                            color = "red"
+                        elif "transform" in hex_tile.getPlateBoundaries():
+                            color = "yellow"
+                        elif "divergent" in hex_tile.getPlateBoundaries():
+                            color = "blue"
+                        else:
+                            print("Not sure what's happening...")
+                            print(hex_tile.getPlateBoundaries())
+                            color = "deeppink"
+                            
+            if view == "debugging":
+                movement_colors = {"NE": "mediumslateblue", "E": "blue", "SE": "aquamarine",
+                                   "SW": "olive", "W": "red", "NW": "mediumvioletred"}
+                title = "Debugging Plates"
+                if hex_tile.getPlateMovement():
+                    direction = hex_tile.getPlateMovement()
+                    color = movement_colors[direction]
+                else:
+                    color = "black"
+    """        
+    
+    
