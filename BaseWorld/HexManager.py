@@ -107,16 +107,58 @@ class HexManager:
                     if hex_tile.getIsRiver():
                         color = "aqua"
                     if hex_tile.getIsMountainous():
-                        color = "saddlebrown"                        
+                        color = "saddlebrown"   
+                    if hex_tile.getIsVolcanic():
+                        color = "crimson"
                         
                 else:
                     color = "royalblue" # Start with all water tiles being blue
                     if hex_tile.getIsShallows():
                         color = "lightsteelblue"
                     if hex_tile.getIsLake():
-                        color = "cornflowerblue"
+                        color = "deepskyblue"
                     if hex_tile.getIsSeaTrench():
                         color = "midnightblue"
+                    if hex_tile.getIsVolcanic():
+                        color = "firebrick"
+                        
+            if view == "topography":
+                title = "World Map: Topography"
+                hex_elevation = hex_tile.getElevation()
+                
+                if hex_tile.getIsLand() or hex_tile.getIsLake():
+                    if hex_elevation < 0:
+                        color = "rosybrown"
+                    elif hex_elevation >= 0 and hex_elevation < 250:
+                        color = "papayawhip"
+                    elif hex_elevation >= 250 and hex_elevation < 500:
+                        color = "navajowhite"
+                    elif hex_elevation >= 500 and hex_elevation < 1000:
+                        color = "burlywood"
+                    elif hex_elevation >= 1000 and hex_elevation < 2000:
+                        color = "goldenrod"
+                    elif hex_elevation >=2000 and hex_elevation < 3000:
+                        color = "darkgoldenrod"
+                    elif hex_elevation >= 3000 and hex_elevation < 4000:
+                        color = "sienna"
+                    elif hex_elevation >= 4000 and hex_elevation < 6000:
+                        color = "saddlebrown"
+                    elif hex_elevation >= 6000 and hex_elevation < 10000:
+                        color = "darkred"
+                    elif hex_elevation >=10000 and hex_elevation < 15000:
+                        color = "maroon"
+                    elif hex_elevation >= 15000 and hex_elevation <= 17000:
+                        color = "black"
+                    else:
+                        color = "yellow"
+                        print("Someone's elevation is funky.")
+                        
+                else:
+                    color = "royalblue" # Start with all water tiles being blue
+                    if hex_tile.getIsShallows():
+                        color = "lightsteelblue"
+                    if hex_tile.getIsSeaTrench():
+                        color = "midnightblue"                
 
             self.drawHex(ax, x, y, color)
         
@@ -591,6 +633,7 @@ class HexManager:
                     if plate_hierarchy.index(world_hex_type) > plate_hierarchy.index(neighbor_type):
                         #... then it's divergent.
                         boundary_type = ("divergent", direction)
+                            
                     # If both hexes are moving at the same speed...
                     elif plate_hierarchy.index(world_hex_type) == plate_hierarchy.index(neighbor_type):
                         #...it's transform.
@@ -655,9 +698,132 @@ class HexManager:
                     boundary_type = ("convergent", direction)
                 
             world_hex.setPlateBoundary(boundary_type)
+            
+            if "convergent" in boundary_type:
+                if world_hex.getIsLand() or world_hex.getIsLake():
+                    if not world_hex.getIsMountainous():
+                        world_hex.makeMountainous()
+                        world_hex.makeHighland()
+                        self.setElevation(world_hex, "plate mountains")
+                    if not neighbor.getIsLand() and not neighbor.getIsLake():
+                        world_hex.setIsVolcanic()
+                else:
+                    if neighbor.getIsLand():
+                        world_hex.makeSeaTrench()
+                    else:
+                        world_hex.setIsShallows()
                         
+        for plate_boundary in world_hex.getPlateBoundaries():
+            if "divergent" in plate_boundary:
+                is_divergent = True
+                if is_divergent and len(world_hex.getPlateBoundaries()) == 1:
+                    if world_hex.getIsLand():
+                        world_hex.makeRiftValley()
+                        self.setElevation(world_hex, "valley")
+                    else:
+                        world_hex.setIsShallows()
+                        world_hex.setIsVolcanic()
+            
+    def setElevation(self, world_hex, feature):
+        if feature == "plate mountains":
+            elevation = np.random.randint(4000,15001)
+            world_hex.makeMountainous()
+            world_hex.makeHighland()
+        elif feature == "mountains":
+            elevation = np.random.randint(2000,10001)
+            world_hex.makeMountainous()
+            world_hex.makeHighland()
+        elif feature == "highlands":
+            elevation = np.random.randint(1000,17001)
+            world_hex.makeHighland()
+        elif feature == "hills":
+            elevation = np.random.randint(50,1000)
+            world_hex.setIsHilly()
+        elif feature == "valley":
+            elevation_drop = np.random.randint(300,1001)
+            elevation = world_hex.getElevation() - elevation_drop
+            if elevation < -300:
+                elevation = -300
+            world_hex.makeValley()
+        world_hex.setElevation(elevation)
+        # After the elevation has been set, smooth out the elevation across the surrounding tiles
+        self.smoothElevation(world_hex)
+        
+    def smoothElevation(self,world_hex):
+        changed_hexes = [world_hex,]
+        while changed_hexes:
+            changed_hex = changed_hexes.pop()
+            neighbors = self.getNeighbors(changed_hex)
+            for neighbor in neighbors:
+                if not neighbor:
+                    continue # Prevents checking off top or bottom of map
+                if not neighbor.getIsLand() and not neighbor.getIsLake():
+                    continue # No change to ocean tiles
+                if changed_hex.getIsMountainous() or changed_hex.getIsHighland():
+                    min_elevation = changed_hex.getElevation()/5
+                else:
+                    min_elevation = changed_hex.getElevation()/2
+                    
+                if neighbor.getElevation() >= min_elevation:
+                    continue # No change to tile's elevation if it's already as high or higher 
+                            # than the minimum elevation.
+                else:
+                    if neighbor.getIsValley():
+                        continue # No change to tile's that are already valleys.
+                    neighbor.setElevation(min_elevation)
+                    if min_elevation >= 3000:
+                        neighbor.makeHighland()
+                    changed_hexes.append(neighbor)
+                    
+    def finishRiftValleys(self):
+        rift_valley_hexes = []
+        for key in self.world_hexes_keys:
+            x,y = key
+            world_hex = self.world_hexes[key]
+            if world_hex.getIsRiftValley():
+                rift_valley_hexes.append(world_hex)
+        for world_hex in rift_valley_hexes:
+                neighbors = self.getNeighbors(world_hex)
+                found_new_valley = False
+                for neighbor in neighbors:
+                    if found_new_valley == True:
+                        break
+                    if not neighbor:
+                        continue
+                    if neighbor.getIsMountainous():
+                        continue
+                    neighbor_buddies = self.getNeighbors(neighbor)
+                    for buddy in neighbor_buddies:
+                        if not buddy:
+                            continue
+                        if buddy == world_hex:
+                            continue
+                        if buddy.getIsRiftValley():
+                            neighbor.makeRiftValley()
+                            self.setElevation(neighbor,"valley")
+                            found_new_valley = True
+                            break
                         
-            """
+    def finishValley(self, world_hex):
+        neighbhors = self.getNeighbors(world_hex)
+        for neighbor in neighbhors:
+            if not neighbor:
+                continue
+            if neighbor.getIsHighland() or neighbor.getIsHilly() or neighbor.getIsValley():
+                continue
+            else:
+                chance = np.random.randint(1,101)
+                if chance < 15:
+                    self.setElevation(neighbor, "mountains")
+                else:
+                    self.setElevation(neighbor, "hills")
+                        
+    def boostElevation(self, world_hex, elevation_boost):
+        new_elevation = world_hex.getElevation() + elevation_boost
+        world_hex.setElevation(new_elevation)
+        self.smoothElevation(world_hex)
+                        
+        """
                 # Delete after plate boundary relationship code has been settled.
                 if hex_tile.getPlateBoundaries():
                     if len(hex_tile.getPlateBoundaries()) > 1:

@@ -50,20 +50,58 @@ class World:
         for world_hex in self.world_hexes:
             if self.oHexManager.checkIfPlateBoundary(world_hex):
                 self.oHexManager.setPlateBoundaryType(world_hex)
-                is_divergent = False
-                for plate_boundary in world_hex.getPlateBoundaries():
-                    if "convergent" in plate_boundary:
-                        if world_hex.getIsLand():
-                            world_hex.makeMountainous()
-                        else:
-                            world_hex.setIsShallows()
-                    elif "divergent" in plate_boundary:
-                        is_divergent = True
-                if is_divergent and len(world_hex.getPlateBoundaries()) == 1:
-                    if world_hex.getIsLand():
-                        world_hex.makeRiftValley()
+        # Smoothing out rift valleys
+        self.oHexManager.finishRiftValleys()
+
+    def addElevationFlavor(self):
+        for world_hex in self.world_hexes:
+            chance = np.random.randint(1,101)
+            if chance <= 5:
+                if world_hex.getIsValley():
+                    continue # No change to valleys
+                if world_hex.getIsLand() or world_hex.getIsLake():
+                    if world_hex.getIsMountainous():
+                        self.oHexManager.boostElevation(world_hex,2000)
                     else:
-                        world_hex.makeSeaTrench()
+                        self.oHexManager.setElevation(world_hex,"mountains")
+                        chance = np.random.randint(1,101)
+                        if chance <= 20:
+                            world_hex.setIsVolcanic()
+                else:
+                    world_hex.setIsShallows()
+                    chance = np.random.randint(1,101)
+                    if chance <= 20:
+                        world_hex.setIsVolcanic()
+            elif chance > 5 and chance <= 10:
+                if world_hex.getIsValley():
+                    continue # No change to valleys
+                if world_hex.getIsLand() or world_hex.getIsLake():
+                    if world_hex.getIsHighland():
+                        self.oHexManager.boostElevation(world_hex, 2000)
+                    else:
+                        self.oHexManager.setElevation(world_hex, "highlands")
+            elif chance > 10 and chance <= 20:
+                if world_hex.getIsHighland() or world_hex.getIsHilly():
+                    continue # No change to higher elevation hexes
+                else:
+                    if world_hex.getIsLand() or world_hex.getIsLake():
+                        self.oHexManager.setElevation(world_hex, "valley")
+            # Now add extra hills (running here so that highland hexes might also be hilly)
+            chance = np.random.randint(1,101)
+            if chance <= 10:
+                if world_hex.getIsValley():
+                    continue # No change to valleys
+                elif world_hex.getIsMountainous():
+                    self.oHexManager.boostElevation(world_hex, 1000)
+                else:
+                    if world_hex.getIsLand() or world_hex.getIsLake():
+                        self.oHexManager.setElevation(world_hex, "hills")
+                        
+    def finishValleys(self):
+        for world_hex in self.world_hexes:
+            if world_hex.getIsValley() and not world_hex.getIsRiftValley():
+                self.oHexManager.finishValley(world_hex)
+                        
                     
     def showMap(self, view):
         self.oHexManager.drawWorldHexGrid(view)

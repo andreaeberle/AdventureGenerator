@@ -18,11 +18,15 @@ class WorldHex:
         self.plate_movement = ""
         self.plate_boundaries = [] # A list to hold all plate boundary relationships the hex has.
                                     # The list entries will be tuples: (boundary_type, hex_side).
+        self.is_volcanic = False
         self.is_mountainous = False
+        self.is_highland = False
         self.is_rift_valley = False
         self.is_sea_trench = False
         self.is_valley = False
         self.is_lake = False
+        self.is_hilly = False
+        self.elevation = 0
         self.major_river = () # Empty tuple for river's start and end points in the hex
     
     def getHexPosition(self):
@@ -57,8 +61,14 @@ class WorldHex:
     def getPlateBoundaries(self):
         return self.plate_boundaries
     
+    def getIsVolcanic(self):
+        return self.is_volcanic
+    
     def getIsMountainous(self):
         return self.is_mountainous
+    
+    def getIsHighland(self):
+        return self.is_highland
     
     def getIsRiver(self):
         if self.major_river:
@@ -78,6 +88,15 @@ class WorldHex:
     def getIsLake(self):
         return self.is_lake
     
+    def getIsHilly(self):
+        return self.is_hilly
+    
+    def getElevation(self):
+        return self.elevation
+    
+    def setIsVolcanic(self):
+        self.is_volcanic = True
+    
     def setIsCoast(self, status): # status will be either True if coast or False if not coast
         self.is_coast = status
         
@@ -86,6 +105,12 @@ class WorldHex:
         
     def setIsLake(self):
         self.is_lake = True
+        
+    def setIsHilly(self):
+        self.is_hilly = True
+        
+    def setElevation(self, elevation):
+        self.elevation = elevation
     
     def makeLand(self, continent_index):
         self.is_land = True
@@ -107,9 +132,15 @@ class WorldHex:
 
     def makeMountainous(self):
         self.is_mountainous = True
+    
+    def makeHighland(self):
+        self.is_highland = True
         
     def makeRiftValley(self):
         self.is_rift_valley = True
+        self.is_valley = True
+        
+    def makeValley(self):
         self.is_valley = True
         
     def makeSeaTrench(self):

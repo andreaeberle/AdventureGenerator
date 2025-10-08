@@ -102,6 +102,10 @@ class WorldManager:
         self.oWorld.establishCoast()
         
         self.oWorld.identifyPlateBoundaries()
+        
+        self.oWorld.addElevationFlavor()
+        
+        self.oWorld.finishValleys()
                 
     def showMap(self, view):
         self.oWorld.showMap(view)
