@@ -1,0 +1,15 @@
+{
+    "temperate desert": {
+        "latitude_spread": {
+            "inland": {
+                "latitude_min": 31,
+                "latitude_max": 48
+            },
+            "west coast 3": {
+                "latitude_min": 31,
+                "latitude_max": 48
+            }
+        }
+    }
+
+}

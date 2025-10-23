@@ -5,10 +5,16 @@ World
 from .HexManager import *
 from .Continent import *
 from .TectonicPlate import *
+from .BiomeManager import *
+
 
 class World:
-    def __init__(self, all_races, map_width, map_height):
+    def __init__(self, all_races, all_biome_dicts, map_width, map_height):
         self.all_races = all_races
+        
+        self.oBiomeManager = BiomeManager(all_biome_dicts)
+        self.all_biomes = []
+        
         self.oHexManager = HexManager()
         self.continents = [] # List of Continent objects
 
@@ -102,6 +108,34 @@ class World:
             if world_hex.getIsValley() and not world_hex.getIsRiftValley():
                 self.oHexManager.finishValley(world_hex)
                         
+    def identifyCoastType(self):
+        continent_sizes = {} # A dict of {continent index: continent size}
+        for continent in self.continents:
+            index = continent.getContinentIndex()
+            size = continent.getSize()
+            continent_sizes[index] = size
+        for world_hex in self.world_hexes:
+            self.oHexManager.findCoastType(world_hex, continent_sizes)
+        self.oHexManager.setAuxiliaryCoastTypes()
+                
+    def addBiomes(self):   
+        # Start by setting prevailing winds, as those will be relevant for biome setting.
+        self.oHexManager.setPrevailingWinds(trade_wind_limits=[0,29],
+                                            westerlies_limits=[31,60],
+                                            easterlies_limits=[61,90])
+        
+        biome_spreads = self.oBiomeManager.getBiomeSpreads() 
+        # Returns a dict of {biome name: {coast type: (minimum latitude, maximum latitude)}}
+        biome_applicabilities = self.oBiomeManager.getBiomeApplicabilities()
+        # Returns a dict of {biome name: [list of places the biome can exist]}
+        
+        for biome in biome_spreads:
+            biome_name = biome
+            biome_spread = biome_spreads[biome] # A dict of {coast type: (minimum latitude, maximum latitude)}
+            biome_applicability = biome_applicabilities[biome_name]
+            self.oHexManager.applyBiome(biome_name, biome_spread, biome_applicability)
+        
+        self.oHexManager.finalizeBiomes()
                     
     def showMap(self, view):
         self.oHexManager.drawWorldHexGrid(view)

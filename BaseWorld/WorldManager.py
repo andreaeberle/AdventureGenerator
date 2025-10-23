@@ -4,12 +4,15 @@ World Manager Class. Initializes the world by transfering data from .json files.
 
 import numpy as np
 
+
 from .World import *
 
 class WorldManager:
-    def __init__(self, all_race_dicts):
+    def __init__(self, all_race_dicts, all_biome_dicts):
         self.all_race_dicts = all_race_dicts
         self.all_races = [] # List of all race names.
+        
+        self.all_biome_dicts = all_biome_dicts
         
         self.world_height = 30
         self.world_width = 60
@@ -22,7 +25,10 @@ class WorldManager:
             name = keys[0]
             self.all_races.append(name)
         
-        self.oWorld = World(self.all_races, self.world_height, self.world_width)
+        
+        
+        self.oWorld = World(self.all_races, self.all_biome_dicts, 
+                            self.world_height, self.world_width)
         
         # Determining the number and size of continents
         
@@ -106,6 +112,12 @@ class WorldManager:
         self.oWorld.addElevationFlavor()
         
         self.oWorld.finishValleys()
+        
+        # Add biomes
+        
+        self.oWorld.identifyCoastType()
+                
+        self.oWorld.addBiomes()
                 
     def showMap(self, view):
         self.oWorld.showMap(view)

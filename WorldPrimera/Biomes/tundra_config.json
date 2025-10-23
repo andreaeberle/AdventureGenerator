@@ -1,0 +1,31 @@
+{
+    "tundra": {
+        "latitude_spread": {
+            "east coast": {
+                "latitude_min": 61,
+                "latitude_max": 72
+            },
+            "east coast monsoon": {
+                "latitude_min": 61,
+                "latitude_max": 72
+            },
+            "west coast": {
+                "latitude_min": 61,
+                "latitude_max": 72
+            },
+            "west coast 2": {
+                "latitude_min": 61,
+                "latitude_max": 72
+            },
+            "west coast 3": {
+                "latitude_min": 61,
+                "latitude_max": 72
+            },
+            "inland": {
+                "latitude_min": 61,
+                "latitude_max": 72
+            }
+        }
+    }
+
+}

@@ -1,0 +1,27 @@
+{
+    "temperate forest": {
+        "latitude_spread": {
+            "east coast": {
+                "latitude_min": 24,
+                "latitude_max": 42
+            },
+            "east coast monsoon": {
+                "latitude_min": 37,
+                "latitude_max": 48
+            },
+            "west coast": {
+                "latitude_min": 49,
+                "latitude_max": 54
+            },
+            "west coast 2": {
+                "latitude_min": 49,
+                "latitude_max": 54
+            },
+            "west coast 3": {
+                "latitude_min": 49,
+                "latitude_max": 54
+            }
+        }
+    }
+
+}

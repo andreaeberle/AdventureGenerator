@@ -12,6 +12,7 @@ from collections import Counter
 from .WorldHex import *
 
 import numpy as np
+import math
 
 
 class HexManager:
@@ -31,6 +32,16 @@ class HexManager:
         
         self.longest_border = ()
         self.biggest_continents = []
+                
+        self.ocean_hexes = []
+        self.inland_hexes = []
+        self.west_coast_hexes = []
+        self.west_coast_2_hexes = []
+        self.west_coast_3_hexes = []
+        self.east_coast_hexes = []
+        self.east_coast_monsoon_hexes = []
+        
+        self.coast_groups = {}
     
     def drawHex(self, ax, x, y, color):
       delta = 1/np.sqrt(3)
@@ -50,6 +61,10 @@ class HexManager:
     def createWorldHexGrid(self, num_rows, num_columns):
         self.num_rows = num_rows
         self.num_columns = num_columns
+        
+        self.equator_y = num_rows/2
+        self.degree_multiplier = num_rows/180 # The real world extends 90 degrees north and south
+        
         world_hex_objects = []
         for x in range(num_columns):
             for y in range(num_rows):
@@ -159,6 +174,76 @@ class HexManager:
                         color = "lightsteelblue"
                     if hex_tile.getIsSeaTrench():
                         color = "midnightblue"                
+
+            if view == "biomes":
+                title = "World Map: Biomes"
+                
+                hex_biome = hex_tile.getBiome()
+                if hex_biome == "tropical ocean":
+                    if hex_tile.getIsShallows():
+                        color = "lightskyblue"
+                    else:
+                        color = "blue"
+                elif hex_biome == "temperate ocean":
+                    if hex_tile.getIsShallows():
+                        color = "cornflowerblue"
+                    else:
+                        color = "royalblue"
+                elif hex_biome == "arctic ocean":
+                    if hex_tile.getIsShallows():
+                        color = "steelblue"
+                    else:
+                        color = "darkblue"
+                elif hex_biome == "icecap":
+                    color = "white"
+                elif hex_biome == "tundra":
+                    color = "thistle"
+                elif hex_biome == "taiga":
+                    color = "lightsteelblue"
+                elif hex_biome == "tropical forest":
+                    color = "darkgreen"
+                elif hex_biome == "temperate forest":
+                    color = "darkslategrey"
+                elif hex_biome == "temperate seasonal forest":
+                    color = "darkolivegreen"
+                elif hex_biome == "tropical seasonal forest":
+                    color = "green"
+                elif hex_biome == "chaparral":
+                    color = "darkorange"
+                elif hex_biome == "temperate plains":
+                    color = "darkseagreen"
+                elif hex_biome == "subtropical plains":
+                    color = "gold"
+                elif hex_biome == "tropical desert":
+                    color = "firebrick"
+                elif hex_biome == "tropical plains":
+                    color = "yellow"
+                elif hex_biome == "laurentian":
+                    color = "teal"
+                elif hex_biome == "temperate desert":
+                    color = "khaki"
+                
+                else:
+                    color = "magenta"
+                    print(hex_tile.getBiomeOptions())
+                    print(hex_tile.getGotChanged())
+
+            if view == "winds":
+                title = "World Map: Winds"
+                
+                hex_wind = hex_tile.getPrevailingWind()
+                
+                if hex_wind == "NE":
+                    color = "blue"
+                elif hex_wind == "SE":
+                    color = "aquamarine"
+                elif hex_wind == "W":
+                    color = "cornflowerblue"
+                elif hex_wind == "E":
+                    color = "white"
+                else:
+                    color = "black"
+                    
 
             self.drawHex(ax, x, y, color)
         
@@ -306,7 +391,7 @@ class HexManager:
             if self.continent_borders:
                 counted_list = Counter(self.continent_borders)
                 self.longest_border = counted_list.most_common(1)[0][0]
-                
+                                
                 for key in self.world_hexes_keys:
                     x,y = key
                     hex_tile = self.world_hexes[key]
@@ -822,7 +907,326 @@ class HexManager:
         new_elevation = world_hex.getElevation() + elevation_boost
         world_hex.setElevation(new_elevation)
         self.smoothElevation(world_hex)
+                  
+    def findCoastType(self, world_hex, continent_sizes):
+        
+        if not world_hex.getIsLand() and not world_hex.getIsLake():
+            self.ocean_hexes.append(world_hex)
+            return world_hex.setCoastType("ocean")
+        
+        
+        if not world_hex.getIsCoast():
+            self.inland_hexes.append(world_hex)
+            return world_hex.setCoastType("inland")
+        
+        west_neighbors = []
+        west_ocean_neighbors = []
+        west_neighbors.append(self.getNeighbor(world_hex,"NW"))
+        west_neighbors.append(self.getNeighbor(world_hex, "W"))
+        west_neighbors.append(self.getNeighbor(world_hex, "SW"))
+        for neighbor in west_neighbors:
+            if not neighbor:
+                continue
+            if not neighbor.getIsLand():
+                west_ocean_neighbors.append(neighbor)
+                
+        east_neighbors = []
+        east_ocean_neighbors = []
+        east_neighbors.append(self.getNeighbor(world_hex,"NE"))
+        east_neighbors.append(self.getNeighbor(world_hex, "E"))
+        east_neighbors.append(self.getNeighbor(world_hex, "SE"))
+        for neighbor in east_neighbors:
+            if not neighbor:
+                continue
+            if not neighbor.getIsLand():
+                east_ocean_neighbors.append(neighbor)
+        
+        if west_ocean_neighbors and east_ocean_neighbors:
+            coast_dominance = 0
+            for neighbor in west_ocean_neighbors:
+                coast_dominance -= 1
+            for neighbor in east_ocean_neighbors:
+                coast_dominance += 1
+            if coast_dominance == 0:
+                coin_flip = np.random.randint(2)
+                if coin_flip == 0:
+                    self.west_coast_hexes.append(world_hex)
+                    return world_hex.setCoastType("west coast")
+            elif coast_dominance < 0:
+                self.west_coast_hexes.append(world_hex)
+                return world_hex.setCoastType("west coast")
+            
+        elif west_ocean_neighbors:
+            self.west_coast_hexes.append(world_hex)
+            return world_hex.setCoastType("west coast")
+        
+        # Now we are just left with the east coast hexes. We need to figure out which are on
+        # landmasses large enough to be east coast monsoon hexes.
+        
+        touching_continents = list(set(self.continent_borders))
+        continent_index = world_hex.getContinentIndex()
+        landmass_size = continent_sizes[continent_index]
+        for relationship in touching_continents:
+            if continent_index in relationship:
+                for continent in relationship:
+                    if continent_index == continent:
+                        continue # Skips the hex's continent
+                    else:
+                        landmass_size += continent_sizes[continent]
+        
+        if landmass_size >= 80:
+            self.east_coast_monsoon_hexes.append(world_hex)
+            return world_hex.setCoastType("east coast monsoon")
+        else:
+            self.east_coast_hexes.append(world_hex)
+            return world_hex.setCoastType("east coast")
+        
+    def setAuxiliaryCoastTypes(self):
+        # This is run after all hexes have been assigned a coast type of ocean, inland,
+        # west coast, east coast, or east coast monsoon.
+        
+        for world_hex in self.west_coast_hexes:
+            east_neighbor = self.getNeighbor(world_hex, "E")
+            if not east_neighbor:
+                continue
+            if east_neighbor.getCoastType() == "inland":
+                # Puts hexes one column in from the west coast in the west coast 2 category
+                # unless they're a coast or the ocean.
+                east_neighbor.setCoastType("west coast 2")
+                self.west_coast_2_hexes.append(east_neighbor)
+                self.inland_hexes.remove(east_neighbor)
+                # Go one step further for the next column inland.
+                east_neighbor_neighbor = self.getNeighbor(east_neighbor, "E")
+                if not east_neighbor_neighbor:
+                    continue
+                if east_neighbor_neighbor.getCoastType() == "inland":
+                    # Puts hexes two columns in from the west coast in the west coast 3 category
+                    # unless they're a coast or the ocean.
+                    east_neighbor_neighbor.setCoastType("west coast 3")
+                    self.west_coast_3_hexes.append(east_neighbor_neighbor)
+                    self.inland_hexes.remove(east_neighbor_neighbor)
+            
+    def setPrevailingWinds(self, trade_wind_limits, westerlies_limits, easterlies_limits):
+        for key in self.world_hexes_keys:
+            x,y = key
+            world_hex = self.world_hexes[key]
+            
+            # Check for Northeasterly Trade Winds applicability
+            min_n_latitude = math.floor(self.equator_y + trade_wind_limits[0]*self.degree_multiplier)
+            max_n_latitude = math.floor(self.equator_y + trade_wind_limits[1]*self.degree_multiplier)
+            
+            if y >= min_n_latitude and y <= max_n_latitude:
+                world_hex.setPrevailingWind("NE")
+                
+            else:
+                # Check for Southeasterly Trade Winds applicability
+                min_s_latitude = math.floor(self.equator_y - trade_wind_limits[0]*self.degree_multiplier)
+                max_s_latitude = math.floor(self.equator_y - trade_wind_limits[1]*self.degree_multiplier)
+                
+                if y <= min_s_latitude and y >= max_s_latitude:
+                    world_hex.setPrevailingWind("SE")
+                    
+                else:
+                    # Check for Westerlies applicability
+                    min_n_latitude = math.floor(self.equator_y + westerlies_limits[0]*self.degree_multiplier)
+                    max_n_latitude = math.floor(self.equator_y + westerlies_limits[1]*self.degree_multiplier)
+                    min_s_latitude = math.floor(self.equator_y - westerlies_limits[0]*self.degree_multiplier)
+                    max_s_latitude = math.floor(self.equator_y - westerlies_limits[1]*self.degree_multiplier)
+                    
+                    if (y >= min_n_latitude and y <= max_n_latitude) or (y <= min_s_latitude and 
+                                                                     y >= max_s_latitude):
+                        world_hex.setPrevailingWind("W")
                         
+                    else:
+                        # Check for Polar Easterliers applicability
+                        min_n_latitude = math.floor(self.equator_y + easterlies_limits[0]*self.degree_multiplier)
+                        max_n_latitude = math.floor(self.equator_y + easterlies_limits[1]*self.degree_multiplier)
+                        min_s_latitude = math.floor(self.equator_y - easterlies_limits[0]*self.degree_multiplier)
+                        max_s_latitude = math.floor(self.equator_y - easterlies_limits[1]*self.degree_multiplier)
+                        
+                        if (y >= min_n_latitude and y <= max_n_latitude) or (y <= min_s_latitude and 
+                                                                          y >= max_s_latitude):
+                            world_hex.setPrevailingWind("E")
+                
+    def applyBiome(self, biome_name, biome_spread, biome_applicability):
+        
+        if not self.coast_groups:
+            self.coast_groups["ocean"] = self.ocean_hexes
+            self.coast_groups["east coast"] = self.east_coast_hexes
+            self.coast_groups["east coast monsoon"] = self.east_coast_monsoon_hexes
+            self.coast_groups["west coast"] = self.west_coast_hexes
+            self.coast_groups["west coast 2"] = self.west_coast_2_hexes
+            self.coast_groups["west coast 3"] = self.west_coast_3_hexes
+            self.coast_groups["inland"] = self.inland_hexes
+                
+        for coast_type in self.coast_groups:
+            
+            if coast_type in biome_applicability:
+                latitude_range = biome_spread[coast_type]
+                min_latitude = latitude_range["latitude_min"]
+                max_latiude = latitude_range["latitude_max"]
+                # Gives a tuple of (latitude min, latitue max)
+                
+                min_n_latitude = math.floor(self.equator_y + min_latitude*self.degree_multiplier)
+                max_n_latitude = math.floor(self.equator_y + max_latiude*self.degree_multiplier)
+                min_s_latitude = math.floor(self.equator_y - min_latitude*self.degree_multiplier)
+                max_s_latitude = math.floor(self.equator_y - max_latiude*self.degree_multiplier)
+                
+                for world_hex in self.coast_groups[coast_type]:
+                    x,y = world_hex.getHexPosition()
+                
+                    if (y >= min_n_latitude and y <= max_n_latitude) or (y <= min_s_latitude and 
+                                                                     y >= max_s_latitude):
+                        world_hex.addBiomeOption(biome_name)
+                            
+    def finalizeBiomes(self):
+        # Finalizes all biomes, adjusts for rain shadow, and checks for forests
+        # next to deserts
+        
+        # Fixing overlapping biomes. This is janky. Ideally, I'd find a more 
+        # elegant solution
+        for key in self.world_hexes_keys:
+            x,y = key
+            world_hex = self.world_hexes[key]
+            
+            biome_options = world_hex.getBiomeOptions()
+            if len(biome_options) == 0:
+                print(world_hex.getCoastType())
+                print(x)
+                print(y)
+            elif len(biome_options) == 1:
+                world_hex.setBiome(biome_options[0])
+            elif len(biome_options) >= 2:
+                if "tropical desert" in biome_options:
+                    biome_options.remove("tropical desert")
+                elif "taiga" in biome_options:
+                    biome_options.remove("taiga")
+                elif "subtropical plains" in biome_options:
+                    biome_options.remove("subtropical plains")
+                elif "temperate forest" in biome_options:
+                    biome_options.remove("temperate forest")
+                if len(biome_options) != 3:
+                    world_hex.setBiome(biome_options[0])
+            
+        # Finalizing inland hexes
+        for key in self.world_hexes_keys:
+            x,y = key
+            world_hex = self.world_hexes[key]
+            
+            biome_options = world_hex.getBiomeOptions()
+
+            if len(biome_options) == 3:
+                neighbors = self.getNeighbors(world_hex)
+                for neighbor in neighbors:
+                    if not neighbor:
+                        continue
+                    neighbor_biome = neighbor.getBiome()
+                    if not neighbor_biome:
+                        continue
+                    if "desert" in neighbor_biome and "laurentian" in biome_options:
+                        biome_options.remove("laurentian")
+                    elif "forest" in neighbor_biome and "temperate desert" in biome_options:
+                        biome_options.remove("temperate desert")
+                if len(biome_options) == 1:
+                    world_hex.setBiome(biome_options[0])
+                else: 
+                    final_biome = np.random.choice(biome_options)
+                    world_hex.setBiome(final_biome)
+            elif len(biome_options) > 3:
+                print(biome_options)
+                
+        # Adjusting biomes for rain shadows
+        for key in self.world_hexes_keys:
+            x,y = key
+            world_hex = self.world_hexes[key]
+            
+            if (world_hex.getIsMountainous() or 
+                world_hex.getIsHighland()) and world_hex.getElevation()>=4000:
+                wind_direction = world_hex.getPrevailingWind()
+                direction_index = self.directions.index(wind_direction)
+                
+                if direction_index + 3 > 5:
+                    leeward_index = direction_index - 3
+                else:
+                    leeward_index = direction_index + 3
+                
+                leeward_direction = self.directions[leeward_index]
+                
+                leeward_neighbor = self.getNeighbor(world_hex, leeward_direction)
+                if not leeward_neighbor:
+                    continue
+                
+                # Making the leeward neighbor's biome one step drier where possible
+                leeward_biome = leeward_neighbor.getBiome()
+                leeward_biome_components = leeward_biome.split()
+                if "forest" in leeward_biome_components:
+                    if "seasonal" in leeward_biome_components:
+                        leeward_biome_components.remove("seasonal")
+                    leeward_biome_components[1] = "plains"
+                elif "plains" in leeward_biome_components:
+                    leeward_biome_components[1] = "desert"
+                elif "subtropical" in leeward_biome_components:
+                    leeward_biome_components = ["tropical", "desert"]
+                elif "taiga" in leeward_biome_components:
+                    leeward_biome_components = ["temperate", "plains"]
+                elif "laurentian" in leeward_biome_components:
+                    leeward_biome_components = ["temperate", "plains"]
+                elif "chaparral" in leeward_biome_components:
+                    leeward_biome_components = ["temperate", "desert"]
+                else:
+                    continue # Can't make an ocean, desert, or tundra drier
+                
+                new_leeward_biome = " ".join(leeward_biome_components)
+                leeward_neighbor.setBiome(new_leeward_biome)
+                leeward_neighbor.setGotChanged()
+                
+        # Checking for forests next to deserts.
+        for key in self.world_hexes_keys:
+            x,y = key
+            world_hex = self.world_hexes[key]
+            
+            biome = world_hex.getBiome()
+            
+            if "forest" in biome or "laurentian" in biome or "taiga" in biome:
+                neighbors = self.getNeighbors(world_hex)
+                for neighbor in neighbors:
+                    if not neighbor:
+                        continue
+                    neighbor_biome = neighbor.getBiome()
+                    # Convert any desert hexes next to a forest hex into plains hexes
+                    if "desert" in neighbor_biome:
+                        neighbor_biome_components = neighbor_biome.split()
+                        neighbor_biome_components.remove("desert")
+                        neighbor_biome_components.append("plains")
+                        new_neighbor_biome = " ".join(neighbor_biome_components)
+                        neighbor.setBiome(new_neighbor_biome)
+
+
+
+
+        
+        
+        """
+        min_n_latitude = round(self.equator_y + biome_spread[0]*self.degree_multiplier)
+        max_n_latitude = round(self.equator_y + biome_spread[1]*self.degree_multiplier)
+        min_s_latitude = round(self.equator_y - biome_spread[0]*self.degree_multiplier)
+        max_s_latitude = round(self.equator_y - biome_spread[1]*self.degree_multiplier)
+        for key in self.world_hexes_keys:
+            x,y = key
+            world_hex = self.world_hexes[key]
+            
+            if "ocean" in biome_applicability:
+                if world_hex.getIsLand() or world_hex.getIsLake():
+                    continue # Ocean biomes won't apply to land tiles
+            else:
+                if not (world_hex.getIsLand() or world_hex.getIsLake()):
+                    continue # Land biomes won't apply to ocean tiles
+                
+            if (y >= min_n_latitude and y <= max_n_latitude) or (y <= min_s_latitude and 
+                                                             y >= max_s_latitude):
+                world_hex.setBiome(biome_name)
+        """
+        
         """
                 # Delete after plate boundary relationship code has been settled.
                 if hex_tile.getPlateBoundaries():

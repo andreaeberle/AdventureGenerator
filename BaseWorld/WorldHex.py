@@ -28,6 +28,20 @@ class WorldHex:
         self.is_hilly = False
         self.elevation = 0
         self.major_river = () # Empty tuple for river's start and end points in the hex
+        
+        self.prevailing_wind = ""
+        self.biome_options = []
+        self.biome = ""
+        self.coast_type = ""
+        self.got_changed = False # For debugging
+    
+    
+    def getGotChanged(self):
+        return self.got_changed
+    
+    def setGotChanged(self):
+        self.got_changed = True
+    
     
     def getHexPosition(self):
         return self.hex_position # Returns [x,y] position as a list
@@ -94,6 +108,18 @@ class WorldHex:
     def getElevation(self):
         return self.elevation
     
+    def getCoastType(self):
+        return self.coast_type
+    
+    def getPrevailingWind(self):
+        return self.prevailing_wind
+    
+    def getBiomeOptions(self):
+        return self.biome_options
+    
+    def getBiome(self):
+        return self.biome
+    
     def setIsVolcanic(self):
         self.is_volcanic = True
     
@@ -129,6 +155,18 @@ class WorldHex:
         self.plate_boundaries.append(boundary_type)
         unique_boundaries = list(set(self.plate_boundaries)) # Removes duplicate boundary entries
         self.plate_boundaries = unique_boundaries
+        
+    def setCoastType(self, coast_type):
+        self.coast_type = coast_type
+        
+    def setPrevailingWind(self, direction):
+        self.prevailing_wind = direction
+        
+    def addBiomeOption(self, biome_name):
+        self.biome_options.append(biome_name)
+        
+    def setBiome(self, biome_name):
+        self.biome = biome_name
 
     def makeMountainous(self):
         self.is_mountainous = True

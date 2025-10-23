@@ -13,3 +13,6 @@ class Continent:
         
     def getSize(self):
         return len(self.hex_list)
+    
+    def getContinentIndex(self):
+        return self.continent_index

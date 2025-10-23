@@ -1,0 +1,31 @@
+{
+    "tropical forest": {
+        "latitude_spread": {
+            "east coast": {
+                "latitude_min": 0,
+                "latitude_max": 23
+            },
+            "east coast monsoon": {
+                "latitude_min": 0,
+                "latitude_max": 11
+            },
+            "west coast": {
+                "latitude_min": 0,
+                "latitude_max": 5
+            },
+            "west coast 2": {
+                "latitude_min": 0,
+                "latitude_max": 17
+            },
+            "west coast 3": {
+                "latitude_min": 0,
+                "latitude_max": 24
+            },
+            "inland": {
+                "latitude_min": 0,
+                "latitude_max": 5
+            }
+        }
+    }
+
+}

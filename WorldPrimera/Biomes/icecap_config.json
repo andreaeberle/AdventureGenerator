@@ -1,0 +1,35 @@
+{
+    "icecap": {
+        "latitude_spread": {
+            "ocean": {
+                "latitude_min": 72,
+                "latitude_max": 90
+            },
+            "inland": {
+                "latitude_min": 72,
+                "latitude_max": 90
+            },
+            "west coast": {
+                "latitude_min": 72,
+                "latitude_max": 90
+            },
+            "west coast 2": {
+                "latitude_min": 72,
+                "latitude_max": 90
+            },
+            "west coast 3": {
+                "latitude_min": 72,
+                "latitude_max": 90
+            },
+            "east coast": {
+                "latitude_min": 72,
+                "latitude_max": 90
+            },
+            "east coast monsoon": {
+                "latitude_min": 72,
+                "latitude_max": 90
+            }
+        }
+    }
+
+}

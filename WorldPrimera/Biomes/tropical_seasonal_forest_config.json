@@ -1,0 +1,11 @@
+{
+    "tropical seasonal forest": {
+        "latitude_spread": {
+            "east coast monsoon": {
+                "latitude_min": 12,
+                "latitude_max": 24
+            }
+        }
+    }
+
+}

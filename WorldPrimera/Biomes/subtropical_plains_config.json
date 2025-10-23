@@ -1,0 +1,19 @@
+{
+    "subtropical plains": {
+        "latitude_spread": {
+            "west coast": {
+                "latitude_min": 25,
+                "latitude_max": 30
+            },
+            "west coast 2": {
+                "latitude_min": 25,
+                "latitude_max": 30
+            },
+            "west coast 3": {
+                "latitude_min": 25,
+                "latitude_max": 30
+            }
+        }
+    }
+
+}

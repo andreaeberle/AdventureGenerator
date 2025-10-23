@@ -1,0 +1,23 @@
+{
+    "tropical plains": {
+        "latitude_spread": {
+            "west coast": {
+                "latitude_min": 6,
+                "latitude_max": 17
+            },
+            "west coast 2": {
+                "latitude_min": 18,
+                "latitude_max": 24
+            },
+            "west coast 3": {
+                "latitude_min": 6,
+                "latitude_max": 12
+            },
+            "inland": {
+                "latitude_min": 6,
+                "latitude_max": 12
+            }
+        }
+    }
+
+}

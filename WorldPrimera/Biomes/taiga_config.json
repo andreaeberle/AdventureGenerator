@@ -1,0 +1,31 @@
+{
+    "taiga": {
+        "latitude_spread": {
+            "east coast": {
+                "latitude_min": 43,
+                "latitude_max": 60
+            },
+            "east coast monsoon": {
+                "latitude_min": 49,
+                "latitude_max": 60
+            },
+            "west coast": {
+                "latitude_min": 55,
+                "latitude_max": 60
+            },
+            "west coast 2": {
+                "latitude_min": 55,
+                "latitude_max": 60
+            },
+            "west coast 3": {
+                "latitude_min": 55,
+                "latitude_max": 60
+            },
+            "inland": {
+                "latitude_min": 49,
+                "latitude_max": 60
+            }
+        }
+    }
+
+}

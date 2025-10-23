@@ -1,0 +1,19 @@
+{
+    "tropical desert": {
+        "latitude_spread": {
+            "west coast": {
+                "latitude_min": 18,
+                "latitude_max": 24
+            },
+            "west coast 3": {
+                "latitude_min": 13,
+                "latitude_max": 17
+            },
+            "inland": {
+                "latitude_min": 13,
+                "latitude_max": 30
+            }
+        }
+    }
+
+}

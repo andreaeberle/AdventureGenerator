@@ -37,6 +37,8 @@ class Race():
         
         #self.ability_modifiers = self.race_dict["ability_modifiers"] # Pulling out ability modifier dict
     
+    def getRaceName(self):
+        return self.name
         
     def setHeight(self):
         height = np.random.uniform(self.height_min, self.height_max)
@@ -46,5 +48,3 @@ class Race():
         weight_ratio = np.random.uniform(self.weight_ratio_min, self.weight_ratio_max)
         return weight_ratio
     
-    def getRaceName(self):
-        return self.name

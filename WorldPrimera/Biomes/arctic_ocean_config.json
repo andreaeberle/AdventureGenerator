@@ -1,0 +1,11 @@
+{
+    "arctic ocean": {
+        "latitude_spread": {
+            "ocean": {
+                "latitude_min": 56,
+                "latitude_max": 71
+            }
+        }
+    }
+
+}

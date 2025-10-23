@@ -1,0 +1,11 @@
+{
+    "tropical ocean": {
+        "latitude_spread": {
+            "ocean": {
+                "latitude_min": 0,
+                "latitude_max": 24
+            }
+        }
+    }
+
+}

@@ -1,0 +1,11 @@
+{
+    "chaparral": {
+        "latitude_spread": {
+            "west coast": {
+                "latitude_min": 31,
+                "latitude_max": 48
+            }
+        }
+    }
+
+}

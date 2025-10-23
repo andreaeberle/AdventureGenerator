@@ -1,0 +1,11 @@
+{
+    "temperate ocean": {
+        "latitude_spread": {
+            "ocean": {
+                "latitude_min": 25,
+                "latitude_max": 55
+            }
+        }
+    }
+
+}
