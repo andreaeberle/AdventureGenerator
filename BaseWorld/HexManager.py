@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from collections import Counter
 
+import matplotlib.colors as mcolors
+
 from .WorldHex import *
 
 import numpy as np
@@ -29,6 +31,9 @@ class HexManager:
         self.plate_colors = ["white", "firebrick", "maroon", "darkorange", "peru", "saddlebrown",
                              "goldenrod", "lightcoral", "orangered", "rosybrown", "indianred", 
                              "brown", "burlywood", "rosybrown"]
+        
+        css4_colors = list(mcolors.CSS4_COLORS.keys())
+        self.dominion_colors = css4_colors[:100]
         
         self.longest_border = ()
         self.biggest_continents = []
@@ -162,7 +167,7 @@ class HexManager:
                         color = "darkred"
                     elif hex_elevation >=10000 and hex_elevation < 15000:
                         color = "maroon"
-                    elif hex_elevation >= 15000 and hex_elevation <= 17000:
+                    elif hex_elevation >= 15000:
                         color = "black"
                     else:
                         color = "yellow"
@@ -225,25 +230,104 @@ class HexManager:
                 
                 else:
                     color = "magenta"
-                    print(hex_tile.getBiomeOptions())
-                    print(hex_tile.getGotChanged())
 
-            if view == "winds":
-                title = "World Map: Winds"
+            if view == "rivers":
+                title = "World Map: Rivers/Wetlands"
                 
-                hex_wind = hex_tile.getPrevailingWind()
+                wetland_type = hex_tile.getWetland()
                 
-                if hex_wind == "NE":
-                    color = "blue"
-                elif hex_wind == "SE":
-                    color = "aquamarine"
-                elif hex_wind == "W":
-                    color = "cornflowerblue"
-                elif hex_wind == "E":
-                    color = "white"
+                if hex_tile.getIsLand():
+                    color = "darkgoldenrod"
+                else:
+                    color = "royalblue"
+                    
+                if hex_tile.getIsRiver():
+                    color = "cyan"
+                    
+                if hex_tile.getIsHeadwaters():
+                    color = "paleturquoise"
+                    
+                if wetland_type == "vernal pool":
+                    color = "darkkhaki"
+                    
+                if wetland_type == "oasis":
+                    color = "yellowgreen"
+                    
+                if wetland_type == "bog":
+                    color = "darkseagreen"
+
+                if wetland_type == "fen":
+                    color = "mediumseagreen"
+
+                if wetland_type == "marsh":
+                    color = "lightseagreen"
+                    
+                if wetland_type == "swamp":
+                    color = "olivedrab"
+
+                if wetland_type == "lake":
+                    color = "deepskyblue"
+
+                if wetland_type == "endorheic basin":
+                    color = "olive"
+                    
+                if wetland_type == "estuary":
+                    color = "darkcyan"
+                    
+                if wetland_type and not "estuary" in wetland_type:
+                    print(wetland_type)
+
+            if view == "debug resources":
+                title = "World Map: Debugging Resources"
+                if "corn" in hex_tile.getPossibleResources():
+                    color = "yellow"
+                    if "wolf" in hex_tile.getPossibleResources():
+                        color = "orange"
+                elif "wolf" in hex_tile.getPossibleResources():
+                    color = "red"
                 else:
                     color = "black"
+
+            if view == "landmarks":
+                title = "World Map: Landmarks"
+                hex_landmark = hex_tile.getLandmark()
+
+                if not hex_landmark:
+                    if hex_tile.getIsLand():
+                        color = "darkgoldenrod"
+                    else:
+                        color = "royalblue"
+                elif hex_landmark == "city":
+                    color = "yellow"
+                elif hex_landmark == "military fortress":
+                    color = "green"
+                elif hex_landmark == "religious site":
+                    color = "orange"
+                elif hex_landmark == "center of learning":
+                    color = "purple"
+                elif hex_landmark == "monster lair":
+                    color = "red"
+                elif hex_landmark == "natural wonder":
+                    color = "aqua"
+                elif hex_landmark == "ruin":
+                    color = "black"
                     
+            if view == "dominions":
+                title = "World Map: Dominions"        
+                
+                if not hex_tile.getDominionIndex():
+                    if hex_tile.getIsLand():
+                        color = "darkgoldenrod"
+                    else:
+                        color = "royalblue"
+                
+                else:
+                    if len(hex_tile.getDominionIndex()) > 1:
+                        color = "black"
+                        print(hex_tile.getDominionIndex())
+                    else:
+                        color = self.dominion_colors[hex_tile.getDominionIndex()[0]]
+                
 
             self.drawHex(ax, x, y, color)
         
@@ -811,7 +895,7 @@ class HexManager:
             
     def setElevation(self, world_hex, feature):
         if feature == "plate mountains":
-            elevation = np.random.randint(4000,15001)
+            elevation = np.random.randint(4000,17001)
             world_hex.makeMountainous()
             world_hex.makeHighland()
         elif feature == "mountains":
@@ -819,16 +903,16 @@ class HexManager:
             world_hex.makeMountainous()
             world_hex.makeHighland()
         elif feature == "highlands":
-            elevation = np.random.randint(1000,17001)
+            elevation = np.random.randint(1000,10001)
             world_hex.makeHighland()
         elif feature == "hills":
             elevation = np.random.randint(50,1000)
             world_hex.setIsHilly()
         elif feature == "valley":
-            elevation_drop = np.random.randint(300,1001)
+            elevation_drop = np.random.randint(300, 1000)
             elevation = world_hex.getElevation() - elevation_drop
-            if elevation < -300:
-                elevation = -300
+            if elevation < 0:
+                elevation = 0
             world_hex.makeValley()
         world_hex.setElevation(elevation)
         # After the elevation has been set, smooth out the elevation across the surrounding tiles
@@ -877,6 +961,8 @@ class HexManager:
                         continue
                     if neighbor.getIsMountainous():
                         continue
+                    if not neighbor.getIsLand() and not neighbor.getIsLake():
+                        continue
                     neighbor_buddies = self.getNeighbors(neighbor)
                     for buddy in neighbor_buddies:
                         if not buddy:
@@ -895,6 +981,8 @@ class HexManager:
             if not neighbor:
                 continue
             if neighbor.getIsHighland() or neighbor.getIsHilly() or neighbor.getIsValley():
+                continue
+            if not neighbor.getIsLand() and not neighbor.getIsLake():
                 continue
             else:
                 chance = np.random.randint(1,101)
@@ -1178,7 +1266,6 @@ class HexManager:
                 
                 new_leeward_biome = " ".join(leeward_biome_components)
                 leeward_neighbor.setBiome(new_leeward_biome)
-                leeward_neighbor.setGotChanged()
                 
         # Checking for forests next to deserts.
         for key in self.world_hexes_keys:
@@ -1201,68 +1288,171 @@ class HexManager:
                         new_neighbor_biome = " ".join(neighbor_biome_components)
                         neighbor.setBiome(new_neighbor_biome)
 
-
-
-
+    def createRiver(self, starting_hex, ending_hex, flow_direction, headwaters=False):
         
+        if headwaters:
+            starting_hex.setIsHeadwaters()
         
-        """
-        min_n_latitude = round(self.equator_y + biome_spread[0]*self.degree_multiplier)
-        max_n_latitude = round(self.equator_y + biome_spread[1]*self.degree_multiplier)
-        min_s_latitude = round(self.equator_y - biome_spread[0]*self.degree_multiplier)
-        max_s_latitude = round(self.equator_y - biome_spread[1]*self.degree_multiplier)
-        for key in self.world_hexes_keys:
-            x,y = key
-            world_hex = self.world_hexes[key]
+        starting_hex.setRiverOutflow(flow_direction)
+        
+        flow_index = self.directions.index(flow_direction)
+        
+        if flow_index + 3 > 5:
+            flow_from_direction = self.directions[flow_index-3]
+        else:
+            flow_from_direction = self.directions[flow_index+3]
             
-            if "ocean" in biome_applicability:
-                if world_hex.getIsLand() or world_hex.getIsLake():
-                    continue # Ocean biomes won't apply to land tiles
-            else:
-                if not (world_hex.getIsLand() or world_hex.getIsLake()):
-                    continue # Land biomes won't apply to ocean tiles
-                
-            if (y >= min_n_latitude and y <= max_n_latitude) or (y <= min_s_latitude and 
-                                                             y >= max_s_latitude):
-                world_hex.setBiome(biome_name)
-        """
+        ending_hex.setRiverInflow(flow_from_direction)
         
-        """
-                # Delete after plate boundary relationship code has been settled.
-                if hex_tile.getPlateBoundaries():
-                    if len(hex_tile.getPlateBoundaries()) > 1:
-                        if "convergent" in hex_tile.getPlateBoundaries():
-                            if "transform" in hex_tile.getPlateBoundaries():
-                                if "divergent" in hex_tile.getPlateBoundaries():
-                                    color = "black"
-                                else:
-                                    color = "orange"
-                            elif "divergent" in hex_tile.getPlateBoundaries():
-                                color = "purple"
-                        else:
-                            color = "green"
-                            
-                    else:
-                        if "convergent" in hex_tile.getPlateBoundaries():
-                            color = "red"
-                        elif "transform" in hex_tile.getPlateBoundaries():
-                            color = "yellow"
-                        elif "divergent" in hex_tile.getPlateBoundaries():
-                            color = "blue"
-                        else:
-                            print("Not sure what's happening...")
-                            print(hex_tile.getPlateBoundaries())
-                            color = "deeppink"
-                            
-            if view == "debugging":
-                movement_colors = {"NE": "mediumslateblue", "E": "blue", "SE": "aquamarine",
-                                   "SW": "olive", "W": "red", "NW": "mediumvioletred"}
-                title = "Debugging Plates"
-                if hex_tile.getPlateMovement():
-                    direction = hex_tile.getPlateMovement()
-                    color = movement_colors[direction]
-                else:
-                    color = "black"
-    """        
-    
-    
+        if not ending_hex.getIsLand() and not ending_hex.getIsLake():
+            ending_hex.setWetland("estuary")
+        
+    def buildRiver(self, world_hex, headwaters=False):
+        # Continues building out a river until it hits another river, a wetland
+        # with existing outflow, the ocean, or a valley with no lower elevation exit
+        
+        if not world_hex.getIsLand() and not world_hex.getIsLake():
+            return False # Don't build out a river in the ocean
+        
+        if "icecap" in world_hex.getBiome():
+            return False # Don't build out a river where water can't flow
+        
+        min_elevation = world_hex.getElevation()
+        lowest_neighbors = {} # A dict of {neighbor_hex: direction_from_world_hex}
+                
+        for direction in self.directions:
+            neighbor = self.getNeighbor(world_hex, direction)
+            if not neighbor:
+                continue
+            if direction in world_hex.getRiverInflows():
+                # Prevents the river from going back on itself
+                continue
+            if "icecap" in neighbor.getBiome():
+                # Prevents rivers pathing where water can't flow
+                continue
+            if neighbor.getIsHeadwaters():
+                # Prevents new rivers from pathing into where another river
+                # begins at the same hex level
+                continue
+            neighbor_elevation = neighbor.getElevation()
+            if neighbor_elevation < min_elevation:
+                lowest_neighbors = {neighbor: direction,}
+                min_elevation = neighbor_elevation
+            elif neighbor_elevation == min_elevation:
+                lowest_neighbors[neighbor] = direction
+                
+        # If there's a single neighboring hex of lowest elevation, the river flows there
+        if len(lowest_neighbors) == 1:
+            chosen_hex = next(iter(lowest_neighbors))
+            direction = lowest_neighbors[chosen_hex]
+            self.createRiver(world_hex, chosen_hex, direction, headwaters)
+            
+        # If there's a tie, check how verdant the lowest neighbors are...
+        elif len(lowest_neighbors) > 1:
+            forest_neighbors = []
+            shrub_neighbors = []
+            all_lowest_neighbors = list(lowest_neighbors.keys())
+            
+            for neighbor in lowest_neighbors:
+                neighbor_biome = neighbor.getBiome()
+                
+                if "forest" in neighbor_biome or "laurentian" in neighbor_biome or "taiga" in neighbor_biome:
+                    forest_neighbors.append(neighbor)
+                    
+                elif "plains" in neighbor_biome or "chaparral" in neighbor_biome:
+                    shrub_neighbors.append(neighbor)
+                    
+            # Flow to one of the most verdant hexes, or pick randomly from
+            # the lowest hexes.
+            if forest_neighbors:
+                chosen_hex = np.random.choice(forest_neighbors)
+            elif shrub_neighbors:
+                chosen_hex = np.random.choice(shrub_neighbors)
+            else:
+                chosen_hex = np.random.choice(all_lowest_neighbors)
+                
+            direction = lowest_neighbors[chosen_hex]
+            
+            self.createRiver(world_hex, chosen_hex, direction, headwaters)
+                
+        
+        # If there are no surrounding hexes with a lower elevation, the river ends.
+        # The river either goes underground or forms an endorheic basin.
+        else:
+            coin_flip = np.random.randint(2)
+            if coin_flip == 1:
+                #print("Ended in endorheic basin")
+                world_hex.setWetland("endorheic basin")
+            #print("River stopped")
+            return False
+        
+        # If a new river has been created, check if it hit another river, a wetland
+        #  the ocean, or a desert.
+        
+        if "desert" in chosen_hex.getBiome(): # Good chance the river ends
+            chance = np.random.randint(1,101)
+            if chance <=90:
+                coin_flip = np.random.randint(2)
+                if coin_flip == 1:
+                    chosen_hex.setWetland("endorheic basin")
+                    #print("Ended in endorheic basin")
+                #print("River stopped")
+                return False
+            
+        elif "ocean" in chosen_hex.getBiome():
+            world_hex.setWetland("estuary")
+            chosen_hex.setWetland("estuary")
+            #print("River reached the ocean")
+            return False # River ends.
+            
+        if len(chosen_hex.getRiverInflows()) > 1: 
+            # There is a confluence. No need to generate new river pathing.
+            #print("River formed a confluence")
+            #print(chosen_hex.getRiverInflows())
+            return False
+        
+        if chosen_hex.getWetland():
+            wetland_type = chosen_hex.getWetland()
+            #print("River hit a wetland!!!!!!!!!!!!!!!!!!!!")
+            if wetland_type == "endorheic basin":
+                #print("Ended in endorheic basin")
+                return False # There will be no outflow
+            else:
+                if chosen_hex.getRiverOutflow():
+                    #print("Ended in wetland that already has an outflow!!!!!!!!!!!!!!")
+                    return False # The wetland already has an outflow. No need to continue.
+        #print("river continues")
+        return chosen_hex
+        
+        # self.directions = ["NE", "E", "SE", "SW", "W", "NW"]
+        
+    def setResourceSpread(self, resource_name, resource_spread):
+        
+        # resource_spread should be a tuple of (starting x, ending x)
+        
+        # Assign resource to first map column
+        starting_x = resource_spread[0]
+        ending_x = resource_spread[1]
+        for y in range(self.num_rows):
+            world_hex = self.world_hexes[(starting_x, y)]
+            world_hex.assignResource(resource_name)
+        
+        x = starting_x
+        
+        # Assign resource across spread until reaching the last column
+        while x != ending_x:
+            x += 1
+            
+            # Handles going off edge of map
+            if x > self.num_columns - 1:
+                x = 0
+                
+            for y in range(self.num_rows):
+                world_hex = self.world_hexes[(x, y)]
+                world_hex.assignResource(resource_name)
+                
+        # Assign resource to last map column
+        if starting_x != ending_x: # Skips this step if the resource only exists in one column
+            for y in range(self.num_rows):
+                world_hex = self.world_hexes[(ending_x, y)]
+                world_hex.assignResource(resource_name)

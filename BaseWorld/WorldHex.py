@@ -27,21 +27,21 @@ class WorldHex:
         self.is_lake = False
         self.is_hilly = False
         self.elevation = 0
-        self.major_river = () # Empty tuple for river's start and end points in the hex
         
         self.prevailing_wind = ""
         self.biome_options = []
         self.biome = ""
         self.coast_type = ""
-        self.got_changed = False # For debugging
-    
-    
-    def getGotChanged(self):
-        return self.got_changed
-    
-    def setGotChanged(self):
-        self.got_changed = True
-    
+        
+        self.wetland = ""
+        self.is_headwaters = False
+        self.river_outflow = ""
+        self.river_inflows = []
+        
+        self.possible_resources = []
+        
+        self.landmark = ""
+        self.dominion_index = []
     
     def getHexPosition(self):
         return self.hex_position # Returns [x,y] position as a list
@@ -85,10 +85,12 @@ class WorldHex:
         return self.is_highland
     
     def getIsRiver(self):
-        if self.major_river:
+        if self.is_headwaters:
             return True
-        else:
-            return False
+        if self.river_outflow:
+            return True
+        if self.river_inflows and self.getIsLand():
+            return True
         
     def getIsValley(self):
         return self.is_valley
@@ -120,6 +122,27 @@ class WorldHex:
     def getBiome(self):
         return self.biome
     
+    def getWetland(self):
+        return self.wetland
+    
+    def getRiverInflows(self):
+        return self.river_inflows
+    
+    def getRiverOutflow(self):
+        return self.river_outflow
+    
+    def getIsHeadwaters(self):
+        return self.is_headwaters
+    
+    def getPossibleResources(self):
+        return self.possible_resources
+    
+    def getLandmark(self):
+        return self.landmark
+    
+    def getDominionIndex(self):
+        return self.dominion_index
+    
     def setIsVolcanic(self):
         self.is_volcanic = True
     
@@ -131,6 +154,7 @@ class WorldHex:
         
     def setIsLake(self):
         self.is_lake = True
+        self.wetland = "lake"
         
     def setIsHilly(self):
         self.is_hilly = True
@@ -184,8 +208,26 @@ class WorldHex:
     def makeSeaTrench(self):
         self.is_sea_trench = True
         
-    def addRiver(self, starting_side, ending_side):
-        self.major_river = (starting_side, ending_side)
+    def setWetland(self, wetland_type="unknown"):
+        self.wetland = wetland_type
         
-    def makeValley(self):
-        self.is_valley = True
+    def setIsHeadwaters(self):
+        self.is_headwaters = True
+        self.is_river = True
+        
+    def setRiverOutflow(self, direction):
+        self.river_outflow = direction
+        self.is_river = True
+        
+    def setRiverInflow(self, direction):
+        self.river_inflows.append(direction)
+        self.is_river = True
+        
+    def assignResource(self, resource_name):
+        self.possible_resources.append(resource_name)
+        
+    def setLandmark(self, landmark_type):
+        self.landmark = landmark_type
+        
+    def setDominionIndex(self, dominion_index):
+        self.dominion_index.append(dominion_index)

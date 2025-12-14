@@ -7,19 +7,20 @@
             "weight_ratio_max": 39,
             "size": "medium",
             "skin_colors": [
-                "pale",
+                "white",
                 "tan",
                 "brown",
                 "black"
             ],
             "hair_colors": [
                 "black",
-                "brown",
+                "dark brown",
+                "light brown",
+                "auburn",
                 "red",
                 "blond brown",
                 "gold blond",
-                "platinum blond",
-                "red"
+                "platinum blond"
             ],
             "eye_colors": [
                 "blue",

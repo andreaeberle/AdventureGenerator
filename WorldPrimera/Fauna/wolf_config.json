@@ -1,0 +1,20 @@
+{
+    "wolf": {
+        "habitat_biomes": [
+            "chaparral",
+            "laurentian",
+            "subtropical plains",
+            "taiga",
+            "temperate desert",
+            "temperate forest",
+            "temperate plains",
+            "temperate seasonal forest",
+            "tropical desert",
+            "tropical forest",
+            "tropical plains",
+            "tropical seasonal forest",
+            "tundra"
+        ]
+    }
+}
+

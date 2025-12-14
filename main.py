@@ -19,8 +19,11 @@ while choice != "quit":
     print("4) Geographic Features")
     print("5) Topography")
     print("6) Biomes")
-    print("7) Winds")
-    print("8) Quit")
+    print("7) Rivers/Wetlands")
+    print("8) Debugging Resources")
+    print("9) Landmarks")
+    print("10) Dominions")
+    print("11) Quit")
     
     choice = input("What would you like to view? Enter number: ")
     if choice == "1":
@@ -36,8 +39,14 @@ while choice != "quit":
     elif choice == "6":
         oGameMaster.showMap("biomes")
     elif choice == "7":
-        oGameMaster.showMap("winds")
+        oGameMaster.showMap("rivers")
     elif choice == "8":
+        oGameMaster.showMap("debug resources")
+    elif choice == "9":
+        oGameMaster.showMap("landmarks")
+    elif choice == "10":
+        oGameMaster.showMap("dominions")
+    elif choice == "11":
         choice = "quit"
     else:
         print("Not a valid input. Please enter one of the numbers provided below:")

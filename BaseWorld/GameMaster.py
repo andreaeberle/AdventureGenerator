@@ -27,9 +27,16 @@ class GameMaster:
         self.all_race_dicts = self.readWorldData("Races")
         
         self.all_biome_dicts = self.readWorldData("Biomes")
+        
+        self.all_flora_dicts = self.readWorldData("Flora")
+        
+        self.all_fauna_dicts = self.readWorldData("Fauna")
                 
         # Initialize all Managers
-        self.oWorldManager = WorldManager(self.all_race_dicts, self.all_biome_dicts)
+        self.oWorldManager = WorldManager(self.all_race_dicts, 
+                                          self.all_biome_dicts,
+                                          self.all_flora_dicts,
+                                          self.all_fauna_dicts)
         self.oCharacterManager = CharacterManager(self.all_race_dicts)
         
         self.oWorldManager.createWorld() 

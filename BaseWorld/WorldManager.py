@@ -8,11 +8,13 @@ import numpy as np
 from .World import *
 
 class WorldManager:
-    def __init__(self, all_race_dicts, all_biome_dicts):
+    def __init__(self, all_race_dicts, all_biome_dicts, all_flora_dicts, all_fauna_dicts):
         self.all_race_dicts = all_race_dicts
         self.all_races = [] # List of all race names.
         
         self.all_biome_dicts = all_biome_dicts
+        self.all_flora_dicts = all_flora_dicts
+        self.all_fauna_dicts = all_fauna_dicts
         
         self.world_height = 30
         self.world_width = 60
@@ -24,10 +26,9 @@ class WorldManager:
             keys = list(race_dict.keys())
             name = keys[0]
             self.all_races.append(name)
-        
-        
-        
+
         self.oWorld = World(self.all_races, self.all_biome_dicts, 
+                            self.all_flora_dicts, self.all_fauna_dicts, 
                             self.world_height, self.world_width)
         
         # Determining the number and size of continents
@@ -118,6 +119,26 @@ class WorldManager:
         self.oWorld.identifyCoastType()
                 
         self.oWorld.addBiomes()
+        
+        # Add rivers and wetlands
+        
+        self.oWorld.addWetlands()
+        
+        self.oWorld.addRivers()
+        
+        self.oWorld.classifyWetlands()
+        
+        # Add basic natural resources spreads
+        
+        self.oWorld.addResourceSpreads()
+        
+        # Add landmark locations
+        
+        self.oWorld.addLandmarks()
+        
+        # Build out dominions based on civilized landmark locations
+        
+        self.oWorld.addDominions()
                 
     def showMap(self, view):
         self.oWorld.showMap(view)

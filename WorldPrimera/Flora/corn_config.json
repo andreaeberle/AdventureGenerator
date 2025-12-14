@@ -1,0 +1,17 @@
+{
+    "corn": {
+        "growth_biomes": [
+            "chaparral",
+            "laurentian",
+            "subtropical plains",
+            "temperate desert",
+            "temperate forest",
+            "temperate plains",
+            "temperate seasonal forest",
+            "tropical forest",
+            "tropical plains",
+            "tropical seasonal forest"
+        ]
+    }
+}
+
