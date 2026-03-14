@@ -33,6 +33,9 @@ class HexManager:
                              "brown", "burlywood", "rosybrown"]
         
         css4_colors = list(mcolors.CSS4_COLORS.keys())
+        css4_colors.remove("black")
+        css4_colors.remove("darkgoldenrod")
+        css4_colors.remove("royalblue")
         self.dominion_colors = css4_colors[:100]
         
         self.longest_border = ()
@@ -83,6 +86,11 @@ class HexManager:
         fig, ax = plt.subplots()
         
         self.world_hexes_keys = list(self.world_hexes.keys())
+        
+        if view == "random hex":
+            all_hexes = list(self.world_hexes.values())
+            random_hex = np.random.choice(all_hexes)
+            self.getDetail(random_hex)
         
         for key in self.world_hexes_keys:
             x,y = key
@@ -315,18 +323,53 @@ class HexManager:
             if view == "dominions":
                 title = "World Map: Dominions"        
                 
-                if not hex_tile.getDominionIndex():
+                if not hex_tile.getDominionIndexes():
                     if hex_tile.getIsLand():
                         color = "darkgoldenrod"
                     else:
                         color = "royalblue"
                 
                 else:
-                    if len(hex_tile.getDominionIndex()) > 1:
+                    if len(hex_tile.getDominionIndexes()) > 1:
                         color = "black"
-                        print(hex_tile.getDominionIndex())
                     else:
-                        color = self.dominion_colors[hex_tile.getDominionIndex()[0]]
+                        color = self.dominion_colors[hex_tile.getDominionIndexes()[0]]
+                
+            if view == "conflicts":
+                title = "World Map: Conflicts"
+                
+                conflicts = hex_tile.getConflictTypes()
+                
+                if len(conflicts) > 1:
+                    print(f"World hex has multiple conflicts: {conflicts}")
+                    color = "black"
+                else:
+                    if "war" in conflicts:
+                        color = "red"
+                    elif "revolt" in conflicts:
+                        color = "darkorange"
+                    elif "plague" in conflicts:
+                        color = "dimgray"
+                    elif "famine" in conflicts:
+                        color = "yellow"
+                    elif "monster" in conflicts:
+                        color = "limegreen"
+                    else:
+                        if hex_tile.getIsLand():
+                            color = "darkgoldenrod"
+                        else:
+                            color = "royalblue"
+
+            if view == "random hex":
+                title = "World Map: Random Hex Detail"
+                
+                if hex_tile.getIsLand():
+                    color = "darkgoldenrod"
+                else:
+                    color = "royalblue"
+                    
+                if hex_tile == random_hex:
+                    color = "yellow"
                 
 
             self.drawHex(ax, x, y, color)
@@ -1456,3 +1499,26 @@ class HexManager:
             for y in range(self.num_rows):
                 world_hex = self.world_hexes[(ending_x, y)]
                 world_hex.assignResource(resource_name)
+                
+    def getDetail(self, world_hex):
+        
+        if world_hex.getBiome() == "icecap":
+            print("This hex is in the polar icecaps.")
+        
+        elif not world_hex.getIsLand():
+            if not world_hex.getIsShallows():
+                print("This hex is out in the open ocean.")
+            else:
+                print("This hex is in a shallows area and may have islands.")
+        else:
+            if not world_hex.getIsCoast():
+                print("This hex is in an inland area.")
+            elif world_hex.getCoastType() == "east coast monsoon":
+                print("This hex is on the east coast of the continent.")
+            else:
+                print(f"This hex is on the {self.coast_type} of the continent.")
+                
+        if world_hex.getDominionIndexes():
+            print("It is claimed by the following dominions:", world_hex.getDominionIndexes())
+        else:
+            print("It is not claimed by any dominions.")

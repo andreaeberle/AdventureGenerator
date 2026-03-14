@@ -6,6 +6,17 @@
             "weight_ratio_min": 20,
             "weight_ratio_max": 23,
             "size": "medium",
+            "gender": {
+                "male": [
+                    1, 
+                    49],
+                "female": [
+                    50,
+                    98],
+                "nonbinary": [
+                    99,
+                    100]
+            },
             "skin_colors": [
                 "pale",
                 "tan",

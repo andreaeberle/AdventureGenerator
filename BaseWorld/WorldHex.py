@@ -41,7 +41,9 @@ class WorldHex:
         self.possible_resources = []
         
         self.landmark = ""
-        self.dominion_index = []
+        self.civ_type = "wilds"
+        self.dominion_indexes = []
+        self.conflicts = []
     
     def getHexPosition(self):
         return self.hex_position # Returns [x,y] position as a list
@@ -140,8 +142,23 @@ class WorldHex:
     def getLandmark(self):
         return self.landmark
     
-    def getDominionIndex(self):
-        return self.dominion_index
+    def getCivType(self):
+        return self.civ_type
+    
+    def getDominionIndexes(self):
+        return self.dominion_indexes
+    
+    def getConflicts(self):
+        return self.conflicts
+    
+    def getConflictTypes(self):
+        conflict_types = []
+        if self.conflicts:
+            for conflict in self.conflicts:
+                conflict_type = conflict[0]
+                if not conflict_type in conflict_types:
+                    conflict_types.append(conflict_type)
+        return conflict_types
     
     def setIsVolcanic(self):
         self.is_volcanic = True
@@ -229,5 +246,14 @@ class WorldHex:
     def setLandmark(self, landmark_type):
         self.landmark = landmark_type
         
+    def setCivType(self, civ_type):
+        self.civ_type = civ_type
+        
     def setDominionIndex(self, dominion_index):
-        self.dominion_index.append(dominion_index)
+        self.dominion_indexes.append(dominion_index)
+        
+    def addConflict(self, conflict, stage, monster_index=""):
+        conflict_and_stage = [conflict, stage]
+        if monster_index:
+            conflict_and_stage.append(monster_index)
+        self.conflicts.append(conflict_and_stage)

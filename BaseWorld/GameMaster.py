@@ -1,5 +1,5 @@
 """
-Game Master class.
+GameMaster class.
 """
 
 import os

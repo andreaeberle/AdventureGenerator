@@ -19,5 +19,5 @@ class Creature:
     def getName(self):
         return self.name
     
-    def getGrowthBiomes(self):
+    def getHabitatBiomes(self):
         return self.habitat_biomes

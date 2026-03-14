@@ -33,6 +33,7 @@ class Race():
         self.height_max = self.appearance["height_max"]
         self.weight_ratio_min = self.appearance["weight_ratio_min"]
         self.weight_ratio_max = self.appearance["weight_ratio_max"]
+        self.gender_options = self.appearance["gender"] # Pulling out gender dict
 
         
         #self.ability_modifiers = self.race_dict["ability_modifiers"] # Pulling out ability modifier dict
@@ -47,4 +48,12 @@ class Race():
     def setWeightRatio(self):
         weight_ratio = np.random.uniform(self.weight_ratio_min, self.weight_ratio_max)
         return weight_ratio
+    
+    def setGender(self):
+        gender_value = np.random.randint(1,101)
+        for gender_option in self.gender_options:
+            gender_range = self.gender_options[gender_option] # Pulls out list of [min, max] range
+            if gender_value >= gender_range[0] and gender_value <= gender_range[1]:
+                gender = gender_option
+        return gender
     

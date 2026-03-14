@@ -7,12 +7,15 @@ from .Race import *
 
 class Character:
     
-    def __init__(self, race, height, weight, home = None, appearance = None, 
-                  personality = None, abilities = None, skills = None):
+    def __init__(self, race, gender, height, weight, appearance = None, 
+                  personality = None, abilities = None, skills = None, 
+                  home = None):
         
         self.race = race
+        self.gender = gender
         self.height = height
         self.weight = weight
+        self.personality = personality
         
     def getHeight(self):
         return self.height
@@ -27,6 +30,12 @@ class Character:
         return height_str
     
     def printCharacter(self):
-        print(self.race)
-        print(self.getHeightFtIn())
-        print(self.weight)
+        print("+++ Appearance +++")
+        print("Race:", self.race)
+        print("Gender:", self.gender)
+        print("Height:", self.getHeightFtIn())
+        print("Weight:", self.weight)
+        
+        print("+++ Personality +++")
+        for trait in self.personality:
+            print(trait + ": " + str(self.personality[trait]))

@@ -6,7 +6,7 @@ Created on Wed Jun 18 13:42:53 2025
 from BaseWorld.GameMaster import *
 
 oGameMaster = GameMaster()
-oGameMaster.startNewWorld()
+oGameMaster.startNewWorld() 
 #oGameMaster.startAdventure() # Muting until I can straighten out world building mechanics
 
 # A loop that allows user to switch between map views
@@ -23,7 +23,9 @@ while choice != "quit":
     print("8) Debugging Resources")
     print("9) Landmarks")
     print("10) Dominions")
-    print("11) Quit")
+    print("11) Conflicts")
+    print("12) Describe a Random Hex")
+    print("13) Quit")
     
     choice = input("What would you like to view? Enter number: ")
     if choice == "1":
@@ -47,6 +49,10 @@ while choice != "quit":
     elif choice == "10":
         oGameMaster.showMap("dominions")
     elif choice == "11":
+        oGameMaster.showMap("conflicts")
+    elif choice == "12":
+        oGameMaster.showMap("random hex")
+    elif choice == "13":
         choice = "quit"
     else:
         print("Not a valid input. Please enter one of the numbers provided below:")

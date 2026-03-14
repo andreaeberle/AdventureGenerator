@@ -139,6 +139,10 @@ class WorldManager:
         # Build out dominions based on civilized landmark locations
         
         self.oWorld.addDominions()
+        
+        # Add major conflicts throughout the world
+        
+        self.oWorld.addConflicts()
                 
     def showMap(self, view):
         self.oWorld.showMap(view)

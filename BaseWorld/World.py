@@ -10,7 +10,7 @@ from .TectonicPlate import *
 from .BiomeManager import *
 from .PlantManager import *
 from .CreatureManager import *
-from .Dominion import *
+from .DominionManager import *
 
 
 class World:
@@ -26,6 +26,8 @@ class World:
         
         self.oPlantManager = PlantManager(all_flora_dicts)
         self.oCreatureManager = CreatureManager(all_fauna_dicts)
+        
+        self.oDominionManager = DominionManager()
 
         self.plates = []
         
@@ -36,7 +38,6 @@ class World:
         self.directions = ["NE", "E", "SE", "SW", "W", "NW"]
         
         self.landmark_hexes = []
-        self.dominions = []
 
     
     def createContinent(self, size):
@@ -459,41 +460,45 @@ class World:
         # Assigns landmark locations across the world map
         
         for world_hex in self.world_hexes:
+            
+            world_hex_biome = world_hex.getBiome()
+
             if not world_hex.getIsLand():
-                if world_hex.getIsShallows():
-                    landmark_chance = 15
-                else:
+                if world_hex_biome == "icecap":
                     landmark_chance = 1
+                elif world_hex.getIsShallows():
+                    landmark_chance = 150
+                else:
+                    landmark_chance = 10
            
             else:
-                world_hex_biome = world_hex.getBiome()
                 
                 if world_hex_biome == "icecap":
                     landmark_chance = 1
                 elif world_hex.getWetland() == "estuary":
                     if "temperate" in world_hex_biome or "chaparral" in world_hex_biome:
-                        landmark_chance = 35
+                        landmark_chance = 350
                     elif "tropical" in world_hex_biome or "subtropical" in world_hex_biome:
-                        landmark_chance = 30
+                        landmark_chance = 300
                     else:
-                        landmark_chance = 25
+                        landmark_chance = 250
                 elif world_hex.getIsCoast():
                     if "temperate" in world_hex_biome or "chaparral" in world_hex_biome:
-                        landmark_chance = 25
+                        landmark_chance = 250
                     elif "tropical" in world_hex_biome or "subtropical" in world_hex_biome:
-                        landmark_chance = 20
+                        landmark_chance = 200
                     else:
-                        landmark_chance = 15
+                        landmark_chance = 150
                 else:
                     if "temperate" in world_hex_biome:
-                        landmark_chance = 20
+                        landmark_chance = 200
                     elif "tropical" in world_hex_biome:
-                        landmark_chance = 15
+                        landmark_chance = 150
                     else:
-                        landmark_chance = 10
+                        landmark_chance = 100
                 
                 if world_hex.getIsRiver():
-                    landmark_chance += 5
+                    landmark_chance += 50
                 
                 if (
                         "desert" in world_hex_biome or 
@@ -504,13 +509,10 @@ class World:
                         "marsh" in world_hex.getWetland() or
                         "swamp" in world_hex.getWetland()
                         ):
-                    landmark_chance -= 5
-                    
-                if world_hex.getIsRiver():
-                    landmark_chance += 5
+                    landmark_chance -= 50
             
-            # Generate random number 1-100 to determine if a landmark will be placed.
-            landmark_roll = np.random.randint(1,101)
+            # Generate random number 1-1000 to determine if a landmark will be placed.
+            landmark_roll = np.random.randint(1,1001)
             
             if landmark_roll <= landmark_chance:
                 # Determine what type of landmark is there
@@ -533,6 +535,32 @@ class World:
                 world_hex.setLandmark(landmark_type)
 
                 self.landmark_hexes.append(world_hex)
+                
+        # Once all landmarks have been created, establish civilization status
+        for world_hex in self.landmark_hexes:
+            landmark_type = world_hex.getLandmark()
+            if (
+                    "city" in landmark_type or
+                    "fortress" in landmark_type or
+                    "site" in landmark_type or
+                    "center" in landmark_type
+                    ):
+                world_hex.setCivType("heartland")
+                neighbors = self.oHexManager.getNeighbors(world_hex)
+                for neighbor in neighbors:
+                    if not neighbor:
+                        continue
+                    else:
+                        neighbor_landmark = neighbor.getLandmark()
+                        if (
+                                "city" in neighbor_landmark or
+                                "fortress" in neighbor_landmark or
+                                "site" in neighbor_landmark or
+                                "center" in neighbor_landmark
+                                ):
+                            continue # Skips hexes that are already civilized landmarks
+                        else:
+                            neighbor.setCivType("frontier")
     
     def addDominions(self):
         
@@ -553,7 +581,7 @@ class World:
                 # Determine whether the dominion will be an empire, great kingdom,
                 # or good kingdom.
                 
-                if landmark_hex.getDominionIndex():
+                if landmark_hex.getDominionIndexes():
                     continue # Skip landmark if it's already in a dominion
                 
                 dominion_type_roll = np.random.randint(1, 101)
@@ -573,7 +601,7 @@ class World:
                 # Start the dominion as the landmark hex or encircling the landmark hex
                 
                 new_dominion_hexes = [landmark_hex]
-                dominion_landmarks = 1
+                dominion_landmarks = [landmark_hex]
                 
                 if dominion_size >= 7:
                     neighbor_hexes = self.oHexManager.getNeighbors(landmark_hex)
@@ -586,7 +614,8 @@ class World:
                         if neighbor.getLandmark():
                             if dominion_type == "good kingdom":
                                 continue # Can't accept another landmark
-                            elif dominion_type == "great kingdom" and dominion_landmarks >= 2:
+                            elif (dominion_type == "great kingdom" 
+                                  and len(dominion_landmarks) >= 2):
                                 continue # Can't accept more landmarks
                         
                         if (
@@ -596,7 +625,7 @@ class World:
                             continue # Can't accept a deep ocean tile unless the landmark
                                     # hex is on a deep ocean tile
                                     
-                        if neighbor.getDominionIndex():
+                        if neighbor.getDominionIndexes():
                             coin_flip = np.random.randint(0,2)
                             if coin_flip == 0:
                                 continue # 50/50 chance of expanding to a claimed tile
@@ -604,7 +633,7 @@ class World:
                         # Only viable additions will make it to this part of the code
                         new_dominion_hexes.append(neighbor)
                         if neighbor.getLandmark():
-                            dominion_landmarks += 1
+                            dominion_landmarks.append(neighbor)
                     
                 # Build out the dominion until it reaches the correct size
                                 
@@ -654,7 +683,7 @@ class World:
                                     if dominion_type == "good kingdom":
                                         continue # Can't accept another landmark
                                     elif (dominion_type == "great kingdom" and 
-                                          dominion_landmarks >= 2):
+                                          len(dominion_landmarks) >= 2):
                                         continue # Can't accept more landmarks
                                 
                                 if (
@@ -694,7 +723,7 @@ class World:
                                     neighbor.getBiome() != world_hex.getBiome()):
                                     expansion_value -= 100
                                     
-                                if neighbor.getDominionIndex():
+                                if neighbor.getDominionIndexes():
                                     expansion_value -= 40
                                     
                                 if expansion_value > best_expansion_value:
@@ -710,14 +739,14 @@ class World:
                                 new_dominion_hexes.append(expansion_options[0])
                                 was_expansion = True
                                 if expansion_options[0].getLandmark():
-                                    dominion_landmarks += 1
+                                    dominion_landmarks.append(expansion_options[0])
                                 
                             elif len(expansion_options) > 1:
                                 new_hex = np.random.choice(expansion_options)
                                 new_dominion_hexes.append(new_hex)
                                 was_expansion = True
                                 if new_hex.getLandmark():
-                                    dominion_landmarks += 1
+                                    dominion_landmarks.append(new_hex)
                                 
                 if len(new_dominion_hexes) < dominion_size:
                     # If there's nowhere to expand but the dominion hasn't reached its
@@ -729,15 +758,223 @@ class World:
                     elif len(new_dominion_hexes) <= 2:
                         dominion_type = "good kingdom"
                 
-                new_dominion = Dominion(dominion_index, dominion_type, new_dominion_hexes)
+                # Setting capital hex location
+                if len(dominion_landmarks) == 1:
+                    capital_hex = dominion_landmarks[0]
+                else:
+                    capital_options = []
+                    for landmark in dominion_landmarks:
+                        landmark_type = landmark.getLandmark()
+                        if (
+                                "city" in landmark_type or
+                                "fortress" in landmark_type or
+                                "site" in landmark_type or
+                                "center" in landmark_type
+                                ):
+                            capital_options.append(landmark)
+                    capital_hex = np.random.choice(capital_options)
+                capital_type = capital_hex.getLandmark()
+                
+                
+                self.oDominionManager.createDominion(dominion_index,dominion_type,
+                                                     new_dominion_hexes, capital_hex, 
+                                                     capital_type)
+                
                 for world_hex in new_dominion_hexes:
                     world_hex.setDominionIndex(dominion_index)
-                    
-                self.dominions.append(new_dominion)
-                
+                                    
                 dominion_index += 1
+        
+        # Printing out a random dominion detail. Probably won't want this in the final
+        # code--this is just for fun.
+        
+        print(self.oDominionManager.getDominionDetail())
+        
+    def addConflicts(self):
+        
+        stages = ["burgeoning", "raging", "waning"]
+        
+        for world_hex in self.world_hexes:
+            
+            # War
+            
+            dominion_indexes = world_hex.getDominionIndexes()
+            monster_index = 0
+            
+            # Start by checking for overlapping dominion tiles
+            if len(dominion_indexes) > 1:
+                # There is more than one dominion present in the world hex
+                # Start with a baseline of 25% chance for the dominions to be at war
+                chance_of_war = 25
                 
-        print(len(self.dominions))        
-
+                # Get a list of all dominion diplomacy styles present in the world hex
+                diplomacy_styles = self.oDominionManager.getDiplomacyStyles(dominion_indexes)
+                
+                # If any of the dominions have aggressive diplomacy, there's a higher
+                # chance the dominions in the hex will be at war
+                for diplomacy_style in diplomacy_styles:    
+                    if diplomacy_style == "aggressive":
+                        chance_of_war += 20
+                
+                # Get a list of all dominion ages present in the world hex
+                dominion_ages = self.oDominionManager.getAges(dominion_indexes)
+                
+                # If any of the dominions are growing, there's a higher chance the
+                # dominions in the hex will be at war
+                for dominion_age in dominion_ages:
+                    if dominion_age == "growing":
+                        chance_of_war += 20
+                    if dominion_age == "collapsing":
+                        chance_of_war += 20
+                        
+                war_roll = np.random.randint(1,101)
+                if war_roll <= chance_of_war:
+                    #Dominions in this hex are at war with each other
+                    self.oDominionManager.setWar(dominion_indexes)
+                    conflict_stage = np.random.choice(stages)
+                    world_hex.addConflict("war",conflict_stage)
+                    
+            # Revolt
+            
+            # Chance of revolt is based on the dominion's age, assimilation style,
+            # and religious tolerance
+            
+            # Baseline chance of revolt out of 1,000
+            chance_of_revolt = 1
+            
+            if dominion_indexes:
+                for dominion_index in dominion_indexes:
+                    # Adjust for dominion age
+                    dominion_age = self.oDominionManager.getAges(dominion_index)[0]
+                    if dominion_age == "fledgling":
+                        chance_of_revolt += 20
+                    elif dominion_age == "growing" or dominion_age == "declining":
+                        chance_of_revolt += 10
+                    elif dominion_age == "collapsing":
+                        chance_of_revolt += 30
+                    # Adjust for dominion assimilation style
+                    dominion_assimilation = self.oDominionManager.getAssimilationStyles(dominion_index)[0]
+                    if (dominion_assimilation == "oppressive" or 
+                        dominion_assimilation == "restricted"):
+                        chance_of_revolt += 15
+                    # Adjust for religious tolerance
+                    dominion_religious_tolerance = self.oDominionManager.getReligiousTolerances(dominion_index)[0]
+                    if dominion_religious_tolerance == "strictly intolerant":
+                        chance_of_revolt += 15
+                    # Roll for revolt
+                    revolt_roll = np.random.randint(1,1001)
+                    if revolt_roll <= chance_of_revolt:
+                        # This dominion is experiencing a major revolt in this hex
+                        self.oDominionManager.setRevolt(dominion_index, world_hex)
+                        conflict_stage = np.random.choice(stages)
+                        world_hex.addConflict("revolt",conflict_stage)
+                    
+            # Plague
+            
+            # Apply a baseline chance of plague to all civilized landmarks
+            if world_hex.getCivType() == "heartland":
+                chance_of_plague = 4
+                plague_roll = np.random.randint(1,101)
+                if plague_roll <= chance_of_plague:
+                    # This hex has plague
+                    conflict_stage = np.random.choice(stages)
+                    world_hex.addConflict("plague",conflict_stage)
+                    if conflict_stage != "burgeoning":
+                        # Check for spread to neighbors
+                        first_neighbors = self.oHexManager.getNeighbors(world_hex)
+                        for first_neighbor in first_neighbors:
+                            if not first_neighbor:
+                                continue
+                            chance_of_plague = 75
+                            if first_neighbor.getCivType() == "heartland":
+                                chance_of_plague += 20
+                            plague_roll = np.random.randint(1,101)
+                            if plague_roll <= chance_of_plague:
+                                # This hex also has plague
+                                plague_stages = ["burgeoning", "raging"]
+                                conflict_stage = np.random.choice(plague_stages)
+                                first_neighbor.addConflict("plague",conflict_stage)
+                                if conflict_stage != "burgeoning":                                    # Check for spread to neighbors
+                                    # Check for spread to neighbors
+                                    second_neighbors = self.oHexManager.getNeighbors(first_neighbor)
+                                    for second_neighbor in second_neighbors:
+                                        if not second_neighbor:
+                                            continue
+                                        if second_neighbor in first_neighbors:
+                                            continue
+                                        if second_neighbor == world_hex:
+                                            continue
+                                        chance_of_plague = 50
+                                        if second_neighbor.getCivType() == "heartland":
+                                            chance_of_plague += 20
+                                        elif second_neighbor.getCivType() == "wilds":
+                                            chance_of_plague -= 20
+                                        plague_roll = np.random.randint(1,101)
+                                        if plague_roll <= chance_of_plague:
+                                            # This hex also has plague
+                                            conflict_stage = np.random.choice(plague_stages)
+                                            second_neighbor.addConflict("plague",conflict_stage)
+                                            if conflict_stage != "burgeoning":
+                                                # Check for spreach to neighbors one last time
+                                                third_neighbors = self.oHexManager.getNeighbors(second_neighbor)
+                                                for third_neighbor in third_neighbors:
+                                                    if not third_neighbor:
+                                                        continue
+                                                    if third_neighbor in second_neighbors:
+                                                        continue
+                                                    if third_neighbor in first_neighbors:
+                                                        continue
+                                                    if third_neighbor == world_hex:
+                                                        continue
+                                                    chance_of_plague = 25
+                                                    if third_neighbor.getCivType() == "heartland":
+                                                        chance_of_plague += 20
+                                                    elif third_neighbor.getCivType() == "wilds":
+                                                        chance_of_plague -= 20
+                                                    plague_roll = np.random.randint(0,101)
+                                                    if plague_roll <= chance_of_plague:
+                                                        # This hex also has plague
+                                                        third_neighbor.addConflict("plague", "burgeoning")
+                
+            # Famine
+            
+            # Baseline chance to hit any hex
+            chance_of_famine = 3
+            famine_roll = np.random.randint(1,101)
+            if famine_roll <= chance_of_famine:
+                conflict_stage = np.random.choice(stages)
+                world_hex.addConflict("famine", conflict_stage)
+                
+            # Monster problmems
+            
+            if world_hex.getLandmark() == "monster lair":
+                conflict_stage = np.random.choice(stages)
+                world_hex.addConflict("monster", conflict_stage, monster_index)
+                # Chance to increase monster's range
+                if conflict_stage != "burgeoning":
+                    chance_to_spread = 10
+                    neighbors = self.oHexManager.getNeighbors(world_hex)
+                    for neighbor in neighbors:
+                        if not neighbor:
+                            continue
+                        # Sea monsters will usually stay in the sea and land monsters
+                        # will usually stay on land
+                        if world_hex.getIsLand() and not neighbor.getIsLand():
+                            chance_to_spread = 5
+                        elif not world_hex.getIsLand():
+                            if neighbor.getIsLand():
+                                chance_to_spread = 5
+                            else:
+                                chance_to_spread = 20
+                        # Monsters are more likely to range into similar biomes
+                        if world_hex.getBiome() == neighbor.getBiome():
+                            chance_to_spread += 5
+                        spread_roll = np.random.randint(1,101)
+                        if spread_roll <= chance_to_spread:
+                            # Hex has monster problems
+                            neighbor.addConflict("monster",conflict_stage)
+                    
+                monster_index += 1
+            
     def showMap(self, view):
         self.oHexManager.drawWorldHexGrid(view)
